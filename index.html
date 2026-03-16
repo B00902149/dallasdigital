@@ -3,8 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Adrian Dallas — DallasTech</title>
-  <title>DallasDigital</title>
+ <title>Dallas Digital - Adrian Dallas</title>
   <link rel="icon" type="image/png" href="./assets/images/my-favicon/favicon-96x96.png" sizes="96x96" />
   <link rel="icon" type="image/svg+xml" href="./assets/images/my-favicon/favicon.svg" />
   <link rel="shortcut icon" href="./assets/images/my-favicon/favicon.ico" />
@@ -650,6 +649,9 @@
       <div class="contact-form reveal" id="contact-form-wrap">
         <h3>FREE QUOTE REQUEST</h3>
         <div id="form-content">
+
+          <!-- Section: You -->
+          <div class="form-section-label">ABOUT YOU</div>
           <div class="form-row">
             <div class="form-group">
               <label>YOUR NAME</label>
@@ -660,6 +662,35 @@
               <input type="email" id="f-email" placeholder="you@example.com">
             </div>
           </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>BUSINESS / PROJECT NAME</label>
+              <input type="text" id="f-bizname" placeholder="e.g. Acme Co, FitTrack, The Coffee Spot">
+            </div>
+            <div class="form-group">
+              <label>INDUSTRY</label>
+              <select id="f-industry">
+                <option value="">Select industry...</option>
+                <option>Health &amp; Fitness</option>
+                <option>E-commerce / Retail</option>
+                <option>Food &amp; Hospitality</option>
+                <option>Finance &amp; Fintech</option>
+                <option>Education &amp; E-learning</option>
+                <option>Real Estate</option>
+                <option>Beauty &amp; Wellness</option>
+                <option>Travel &amp; Lifestyle</option>
+                <option>Professional Services</option>
+                <option>Non-profit / Charity</option>
+                <option>Creative / Media</option>
+                <option>Tech / SaaS</option>
+                <option>Other</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Section: Project -->
+          <div class="form-section-label">YOUR PROJECT</div>
           <div class="form-group">
             <label>PROJECT TYPE</label>
             <select id="f-type">
@@ -672,6 +703,18 @@
               <option>Other / Not Sure</option>
             </select>
           </div>
+
+          <div class="form-group">
+            <label>PLATFORM <span class="form-label-hint">— select all that apply</span></label>
+            <div class="form-checkboxes">
+              <label class="form-checkbox"><input type="checkbox" id="f-plat-web" value="Web"> Web</label>
+              <label class="form-checkbox"><input type="checkbox" id="f-plat-ios" value="iOS"> iOS</label>
+              <label class="form-checkbox"><input type="checkbox" id="f-plat-android" value="Android"> Android</label>
+              <label class="form-checkbox"><input type="checkbox" id="f-plat-both" value="iOS + Android"> iOS + Android</label>
+              <label class="form-checkbox"><input type="checkbox" id="f-plat-notsure" value="Not sure yet"> Not sure yet</label>
+            </div>
+          </div>
+
           <div class="form-row">
             <div class="form-group">
               <label>BUDGET RANGE</label>
@@ -697,16 +740,44 @@
               </select>
             </div>
           </div>
+
+          <!-- Section: Brand & existing presence -->
+          <div class="form-section-label">EXISTING PRESENCE <span class="form-label-hint">— optional but helpful</span></div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>CURRENT WEBSITE</label>
+              <input type="url" id="f-website" placeholder="https://yoursite.com">
+            </div>
+            <div class="form-group">
+              <label>SOCIAL MEDIA</label>
+              <input type="text" id="f-socials" placeholder="@handle or platform links">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>DO YOU HAVE EXISTING BRANDING?</label>
+            <select id="f-branding">
+              <option value="">Select...</option>
+              <option>Yes — logo, colours, fonts all set</option>
+              <option>Partial — some assets but needs work</option>
+              <option>No — starting from scratch</option>
+              <option>Not sure yet</option>
+            </select>
+          </div>
+
+          <!-- Section: Description -->
+          <div class="form-section-label">THE BRIEF</div>
           <div class="form-group">
             <label>TELL ME ABOUT YOUR PROJECT</label>
-            <textarea id="f-desc" placeholder="What are you building, who's it for, and what problem does it solve?"></textarea>
+            <textarea id="f-desc" placeholder="What are you building? Who is it for? What problem does it solve? What features matter most?"></textarea>
           </div>
+
           <button class="form-submit" id="form-submit-btn" onclick="submitForm()">Send Quote Request →</button>
         </div>
         <div class="form-success" id="form-success">
           <div class="check">✅</div>
           <h4>REQUEST RECEIVED</h4>
-          <p>Thanks! I'll review your project and get back to you within 24 hours with a tailored quote.</p>
+          <p>Thanks! I'll review your brief and get back to you within 24 hours with a tailored quote.</p>
         </div>
       </div>
 

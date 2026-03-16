@@ -13,6 +13,7 @@
     "express": "^4.19.2",
     "node": "^25.8.0",
     "node-fetch": "^2.7.0",
+    "nodemailer": "^8.0.2",
     "server.js": "^1.0.0"
   },
   "devDependencies": {

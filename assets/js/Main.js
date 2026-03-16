@@ -350,71 +350,148 @@ demoInput.addEventListener('keydown', e => {
 window.addEventListener('load', () => demoLoadBiz('restaurant'));
 
 /* ══════════════════════════════════════════════════════════════
-   CONTACT FORM — EmailJS
+   CONTACT FORM — EmailJS confirmation + AI quote workflow
    ══════════════════════════════════════════════════════════════
- 
+
    SETUP:
    1. Sign up free at emailjs.com
    2. Add an Email Service (Gmail, Outlook, etc.)
-   3. Create a Template using these variables:
-        {{from_name}}   — sender's name
-        {{from_email}}  — sender's email (set as Reply-To)
-        {{project_type}}
-        {{budget}}
-        {{timeline}}
-        {{message}}
-   4. Fill in your IDs below
+   3. Create a confirmation template with variables:
+        {{to_email}}, {{to_name}}, {{subject}}, {{html_body}}
+   4. Fill in your IDs below — leave as YOUR_* until ready,
+      the form will still work without it (quote still generates)
    ============================================================ */
- 
-const EMAILJS_PUBLIC_KEY  = 'eqCN5Kh8sW0S5Zgg6';
-const EMAILJS_SERVICE_ID  = 'service_7sx9qtn';
-const EMAILJS_TEMPLATE_ID = 'template_cjvrusj';
 
-emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
- 
+const EMAILJS_PUBLIC_KEY  = 'YOUR_PUBLIC_KEY';
+const EMAILJS_SERVICE_ID  = 'YOUR_SERVICE_ID';
+const EMAILJS_TEMPLATE_ID = 'YOUR_CONFIRMATION_TEMPLATE_ID';
+
+const EMAILJS_CONFIGURED = !EMAILJS_PUBLIC_KEY.startsWith('YOUR_')
+                        && !EMAILJS_SERVICE_ID.startsWith('YOUR_')
+                        && !EMAILJS_TEMPLATE_ID.startsWith('YOUR_');
+
+if (EMAILJS_CONFIGURED) {
+  emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
+}
+
 async function submitForm() {
   const name     = document.getElementById('f-name').value.trim();
   const email    = document.getElementById('f-email').value.trim();
+  const bizname  = document.getElementById('f-bizname').value.trim();
+  const industry = document.getElementById('f-industry').value;
   const type     = document.getElementById('f-type').value;
   const budget   = document.getElementById('f-budget').value;
   const timeline = document.getElementById('f-timeline').value;
+  const website  = document.getElementById('f-website').value.trim();
+  const socials  = document.getElementById('f-socials').value.trim();
+  const branding = document.getElementById('f-branding').value;
   const desc     = document.getElementById('f-desc').value.trim();
   const btn      = document.getElementById('form-submit-btn');
- 
+
+  // Collect platform checkboxes
+  const platforms = ['f-plat-web','f-plat-ios','f-plat-android','f-plat-both','f-plat-notsure']
+    .filter(id => document.getElementById(id)?.checked)
+    .map(id => document.getElementById(id).value)
+    .join(', ');
+
   // ── Validation ──
-  if (!name) { formShakeField('f-name');  return; }
+  if (!name)  { formShakeField('f-name');  return; }
   if (!email || !email.includes('@')) { formShakeField('f-email'); return; }
   if (!type)  { formShakeField('f-type'); return; }
- 
+
   // ── Loading state ──
-  btn.disabled    = true;
-  btn.textContent = 'Sending...';
+  btn.disabled      = true;
+  btn.textContent   = 'Sending...';
   btn.style.opacity = '0.7';
- 
+
+  const payload = {
+    name,
+    email,
+    biz_name:     bizname   || 'Not provided',
+    industry:     industry  || 'Not specified',
+    project_type: type,
+    platforms:    platforms || 'Not specified',
+    budget:       budget    || 'Not specified',
+    timeline:     timeline  || 'Not specified',
+    website:      website   || 'None provided',
+    socials:      socials   || 'None provided',
+    branding:     branding  || 'Not specified',
+    message:      desc      || 'No description provided.',
+  };
+
   try {
-    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
-      from_name:    name,
-      from_email:   email,
-      project_type: type     || 'Not specified',
-      budget:       budget   || 'Not specified',
-      timeline:     timeline || 'Not specified',
-      message:      desc     || 'No description provided.',
+    // ── Always: send to server for AI quote generation ────────
+    const quoteRes = await fetch('/api/quote-request', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(payload)
     });
- 
-    // ── Success ──
+
+    if (!quoteRes.ok) {
+      const err = await quoteRes.json().catch(() => ({}));
+      throw new Error(err.error || `Server error ${quoteRes.status}`);
+    }
+
+    // ── Optionally: send EmailJS confirmation to customer ─────
+    if (EMAILJS_CONFIGURED) {
+      try {
+        await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+          to_email:     email,
+          to_name:      name,
+          subject:      'We received your quote request — DallasTech',
+          html_body:    buildConfirmationEmail(name, type),
+          from_name:    'Adrian Dallas — DallasTech',
+          project_type: type,
+          budget:       budget   || 'Not specified',
+          timeline:     timeline || 'Not specified',
+          message:      desc     || 'No description provided.',
+        });
+      } catch (ejsErr) {
+        // EmailJS failure doesn't block success — quote still generated
+        console.warn('EmailJS confirmation skipped:', ejsErr.text || ejsErr.message);
+      }
+    }
+
+    // ── Success ───────────────────────────────────────────────
     document.getElementById('form-content').style.display = 'none';
     document.getElementById('form-success').style.display = 'block';
- 
+
   } catch (err) {
-    // ── Error ──
-    btn.disabled    = false;
-    btn.textContent = 'Send Quote Request →';
+    btn.disabled      = false;
+    btn.textContent   = 'Send Quote Request →';
     btn.style.opacity = '1';
     formShowError('Something went wrong — please try again or email me directly.');
-    console.error('EmailJS error:', err);
+    console.error('Form submission error:', err);
   }
 }
- 
+
+/* ── Instant confirmation email body sent to customer ── */
+function buildConfirmationEmail(name, projectType) {
+  return `
+<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;">
+  <div style="background:#7c3aed;border-radius:10px;padding:24px 28px;margin-bottom:24px;">
+    <h1 style="color:#fff;margin:0;font-size:20px;">Quote Request Received ✅</h1>
+    <p style="color:rgba(255,255,255,0.8);margin:8px 0 0;font-size:14px;">DallasTech · adriandallas.dev</p>
+  </div>
+  <p style="font-size:15px;color:#333;">Hi ${name},</p>
+  <p style="font-size:14px;color:#555;line-height:1.7;">
+    Thanks for reaching out! I've received your enquiry for a <strong>${projectType}</strong> project
+    and I'm already working on your personalised quote.
+  </p>
+  <p style="font-size:14px;color:#555;line-height:1.7;">
+    You'll receive a full breakdown — including scope, timeline, and pricing — within <strong>24 hours</strong>.
+  </p>
+  <p style="font-size:14px;color:#555;line-height:1.7;">
+    In the meantime, feel free to reply to this email if you have any questions.
+  </p>
+  <p style="font-size:14px;color:#555;margin-top:28px;">
+    Best,<br>
+    <strong>Adrian Dallas</strong><br>
+    DallasTech — Fast. Modern. Affordable.
+  </p>
+</div>`.trim();
+}
+
 /* ── Shake a field to indicate it's required ── */
 function formShakeField(id) {
   const el = document.getElementById(id);
@@ -427,7 +504,7 @@ function formShakeField(id) {
     el.style.boxShadow   = '';
   }, 2000);
 }
- 
+
 /* ── Show inline error message ── */
 function formShowError(msg) {
   let errEl = document.getElementById('form-error-msg');
