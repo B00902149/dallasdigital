@@ -4,6 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Adrian Dallas — DallasTech</title>
+  <title>DallasDigital</title>
+  <link rel="icon" type="image/png" href="./assets/images/my-favicon/favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="./assets/images/my-favicon/favicon.svg" />
+  <link rel="shortcut icon" href="./assets/images/my-favicon/favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="./assets/images/my-favicon/apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-title" content="DallasDigital" />
+  <link rel="manifest" href="./assets/images/my-favicon/site.webmanifest" />
 
   <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -20,14 +27,13 @@
   <!-- ══ NAV ══════════════════════════════════════════════════ -->
   <nav>
     <a href="#hero" class="nav-logo">
-      <div class="nav-logo-mark">D</div>
-      DALLASTECH
+      <img src="./assets/images/Logofull.svg" alt="Dallas Digital Logo" width="220">
     </a>
     <div class="nav-links">
       <a href="#services">Services</a>
       <a href="#projects">Work</a>
       <a href="#about">About</a>
-      <a href="#agent-section">AI Agent</a>
+      <a href="#ai-demo">AI Demo</a>
       <a href="#contact" class="nav-cta">Get a Quote</a>
     </div>
   </nav>
@@ -141,74 +147,345 @@
     <div class="reveal">
       <div class="section-tag">// Selected Work</div>
       <div class="section-title">PROJECTS THAT<br>MAKE AN IMPACT</div>
+      <p class="section-sub">Real products. Real code. Built from scratch.</p>
     </div>
 
-    <div class="projects-grid">
+    <!-- PROJECT TABS NAV -->
+    <div class="proj-tab-nav reveal">
+      <button class="proj-tab-btn active" data-proj="app">
+        <span class="ptb-icon">📱</span>
+        <span class="ptb-text">CoachingHub App</span>
+        <span class="ptb-badge">iOS · Android</span>
+      </button>
+      <button class="proj-tab-btn" data-proj="coachinghub">
+        <span class="ptb-icon">🌐</span>
+        <span class="ptb-text">CoachingHub Web</span>
+        <span class="ptb-badge">Live</span>
+      </button>
+      <button class="proj-tab-btn" data-proj="fff">
+        <span class="ptb-icon">✝️</span>
+        <span class="ptb-text">FFF Website</span>
+        <span class="ptb-badge">Live</span>
+      </button>
+      <button class="proj-tab-btn" data-proj="portfolio">
+        <span class="ptb-icon">💼</span>
+        <span class="ptb-text">Portfolio</span>
+        <span class="ptb-badge">Live</span>
+      </button>
+    </div>
 
-      <!-- FFF App — featured -->
-      <div class="project-card featured reveal">
-        <div class="project-glow" style="background:#7c3aed;"></div>
-        <div>
-          <div class="project-badge">🔥 FLAGSHIP</div>
-          <div class="project-num">01 · MOBILE APP</div>
-          <div class="project-title">FFF APP</div>
-          <p class="project-desc">A faith-led fitness application combining spiritual practice, nutrition tracking, and adaptive AI coaching into one holistic experience. Built on React Native with Claude API integration for a personalised coaching engine that adapts to the user's faith journey and wellness goals.</p>
-          <div class="project-stack">
-            <span class="tag">React Native</span>
-            <span class="tag">Claude API</span>
-            <span class="tag">Node.js</span>
-            <span class="tag">AI Coaching</span>
-            <span class="tag">iOS/Android</span>
+    <!-- PROJECT PANELS -->
+    <div class="proj-panels reveal">
+
+      <!-- ── APP ── -->
+      <div class="proj-panel active" id="proj-app">
+        <div class="proj-layout app-layout">
+
+          <div class="phone-stage">
+            <div class="phone-carousel">
+              <button class="car-arrow car-left" aria-label="Previous">&#8592;</button>
+              <div class="phone-track-wrap">
+                <div class="phone-track">
+
+                  <div class="phone-frame active">
+                    <div class="phone-shell">
+                      <div class="phone-notch"></div>
+                      <div class="phone-screen">
+                        <img src="https://coachinghub.fit/assets/Dashboard.png" alt="Dashboard" loading="lazy" />
+                      </div>
+                      <div class="phone-bar"></div>
+                    </div>
+                    <span class="screen-lbl">Dashboard</span>
+                  </div>
+
+                  <div class="phone-frame">
+                    <div class="phone-shell">
+                      <div class="phone-notch"></div>
+                      <div class="phone-screen">
+                        <img src="https://coachinghub.fit/assets/MyHealth.png" alt="My Health" loading="lazy" />
+                      </div>
+                      <div class="phone-bar"></div>
+                    </div>
+                    <span class="screen-lbl">My Health</span>
+                  </div>
+
+                  <div class="phone-frame">
+                    <div class="phone-shell">
+                      <div class="phone-notch"></div>
+                      <div class="phone-screen">
+                        <img src="https://coachinghub.fit/assets/Exercise.png" alt="Workouts" loading="lazy" />
+                      </div>
+                      <div class="phone-bar"></div>
+                    </div>
+                    <span class="screen-lbl">Workouts</span>
+                  </div>
+
+                  <div class="phone-frame">
+                    <div class="phone-shell">
+                      <div class="phone-notch"></div>
+                      <div class="phone-screen">
+                        <img src="https://coachinghub.fit/assets/Nutrition.png" alt="Nutrition" loading="lazy" />
+                      </div>
+                      <div class="phone-bar"></div>
+                    </div>
+                    <span class="screen-lbl">Nutrition</span>
+                  </div>
+
+                  <div class="phone-frame">
+                    <div class="phone-shell">
+                      <div class="phone-notch"></div>
+                      <div class="phone-screen">
+                        <img src="https://coachinghub.fit/assets/Community.png" alt="Community" loading="lazy" />
+                      </div>
+                      <div class="phone-bar"></div>
+                    </div>
+                    <span class="screen-lbl">Community</span>
+                  </div>
+
+                  <div class="phone-frame">
+                    <div class="phone-shell">
+                      <div class="phone-notch"></div>
+                      <div class="phone-screen">
+                        <img src="https://coachinghub.fit/assets/Search.png" alt="Exercise Library" loading="lazy" />
+                      </div>
+                      <div class="phone-bar"></div>
+                    </div>
+                    <span class="screen-lbl">Exercise Library</span>
+                  </div>
+
+                  <div class="phone-frame">
+                    <div class="phone-shell">
+                      <div class="phone-notch"></div>
+                      <div class="phone-screen">
+                        <img src="https://coachinghub.fit/assets/Macros.png" alt="Weekly Macros" loading="lazy" />
+                      </div>
+                      <div class="phone-bar"></div>
+                    </div>
+                    <span class="screen-lbl">Weekly Macros</span>
+                  </div>
+
+                  <div class="phone-frame">
+                    <div class="phone-shell">
+                      <div class="phone-notch"></div>
+                      <div class="phone-screen">
+                        <img src="https://coachinghub.fit/assets/Profile.png" alt="Profile" loading="lazy" />
+                      </div>
+                      <div class="phone-bar"></div>
+                    </div>
+                    <span class="screen-lbl">Profile</span>
+                  </div>
+
+                </div>
+              </div>
+              <button class="car-arrow car-right" aria-label="Next">&#8594;</button>
+            </div>
+            <div class="car-dots">
+              <span class="car-dot active" data-i="0"></span>
+              <span class="car-dot" data-i="1"></span>
+              <span class="car-dot" data-i="2"></span>
+              <span class="car-dot" data-i="3"></span>
+              <span class="car-dot" data-i="4"></span>
+              <span class="car-dot" data-i="5"></span>
+              <span class="car-dot" data-i="6"></span>
+              <span class="car-dot" data-i="7"></span>
+            </div>
           </div>
-        </div>
-        <div class="project-visual" style="--vis-bg:linear-gradient(135deg,#7c3aed30,#10d9a020);">
-          <span style="position:relative;z-index:1">🏋️‍♂️</span>
+
+          <div class="proj-info">
+            <div class="proj-type-tag">🏆 Final Year Project</div>
+            <h3 class="proj-name">CoachingHub</h3>
+            <p class="proj-desc">A cross-platform fitness app that ends "app fatigue" — unifying workout tracking, nutrition logging, real-time health metrics, and a community newsfeed into one dashboard. Integrates with Apple Health, Google Fit, and the USDA food database.</p>
+
+            <div class="proj-features">
+              <div class="proj-feat"><span>📊</span> Unified health dashboard</div>
+              <div class="proj-feat"><span>🏋️</span> 800+ exercise database</div>
+              <div class="proj-feat"><span>🥗</span> USDA nutrition tracking</div>
+              <div class="proj-feat"><span>👥</span> Community newsfeed</div>
+              <div class="proj-feat"><span>🔗</span> 6+ API integrations</div>
+              <div class="proj-feat"><span>🔐</span> JWT + Firebase auth</div>
+            </div>
+
+            <div class="proj-stack">
+              <span class="tag">React Native</span>
+              <span class="tag">Expo</span>
+              <span class="tag">Node.js</span>
+              <span class="tag">MongoDB</span>
+              <span class="tag">Redux</span>
+              <span class="tag">Firebase</span>
+              <span class="tag">REST API</span>
+              <span class="tag">JWT Auth</span>
+            </div>
+
+            <div class="proj-actions">
+              <a href="https://coachinghub.fit/" target="_blank" rel="noopener" class="btn-primary">View Website →</a>
+              <a href="https://github.com/B00902149/CHApp" target="_blank" rel="noopener" class="btn-ghost">GitHub</a>
+            </div>
+          </div>
+
         </div>
       </div>
 
-      <!-- DevAgent -->
-      <div class="project-card reveal" onclick="document.getElementById('agent-section').scrollIntoView({behavior:'smooth'})">
-        <div class="project-glow" style="background:#c026d3;"></div>
-        <div class="project-num">02 · AI TOOLING</div>
-        <div class="project-title">DEVAGENT</div>
-        <p class="project-desc">An AI-powered freelance operations dashboard — four specialised agents handling client intake, proposal generation, project scoping, and invoicing. Try it live below.</p>
-        <div class="project-stack">
-          <span class="tag">Claude API</span>
-          <span class="tag">AI Agents</span>
-          <span class="tag">HTML/JS</span>
-          <span class="tag">Freelance Ops</span>
+      <!-- ── COACHINGHUB WEB ── -->
+      <div class="proj-panel" id="proj-coachinghub">
+        <div class="proj-layout web-layout">
+
+          <div class="browser-stage">
+            <div class="browser-chrome">
+              <div class="browser-bar">
+                <div class="browser-dots">
+                  <span class="bdot bdot-r"></span>
+                  <span class="bdot bdot-y"></span>
+                  <span class="bdot bdot-g"></span>
+                </div>
+                <div class="browser-url">
+                  <span class="url-lock">🔒</span>
+                  <span>coachinghub.fit</span>
+                </div>
+                <a href="https://coachinghub.fit/" target="_blank" rel="noopener" class="browser-ext" title="Open live site">↗</a>
+              </div>
+              <div class="browser-view screenshot-view">
+                <div class="screenshot-scroll">
+                  <img src="assets/images/CoachingHub.png" alt="CoachingHub website screenshot" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="proj-info">
+            <div class="proj-type-tag">🌐 Marketing Site</div>
+            <h3 class="proj-name">CoachingHub Website</h3>
+            <p class="proj-desc">Waitlist and marketing landing page for the CoachingHub app. Conversion-focused design with feature showcases, app screenshots, and beta signup — built to turn visitors into early testers.</p>
+
+            <div class="proj-features">
+              <div class="proj-feat"><span>🎯</span> Conversion-focused layout</div>
+              <div class="proj-feat"><span>📱</span> App screenshot showcase</div>
+              <div class="proj-feat"><span>📋</span> Waitlist signup</div>
+              <div class="proj-feat"><span>⚡</span> Fully responsive</div>
+            </div>
+
+            <div class="proj-stack">
+              <span class="tag">HTML</span>
+              <span class="tag">CSS</span>
+              <span class="tag">JavaScript</span>
+              <span class="tag">Responsive</span>
+            </div>
+
+            <div class="proj-actions">
+              <a href="https://coachinghub.fit/" target="_blank" rel="noopener" class="btn-primary">View Live →</a>
+            </div>
+          </div>
+
         </div>
       </div>
 
-      <!-- CoachingHub -->
-      <div class="project-card reveal">
-        <div class="project-glow" style="background:#10d9a0;"></div>
-        <div class="project-num">03 · PLATFORM</div>
-        <div class="project-title">COACHINGHUB</div>
-        <p class="project-desc">An all-in-one health, fitness, and community platform. Progress tracking, live coaching sessions, community feeds, and AI-powered programme recommendations in a single dashboard.</p>
-        <div class="project-stack">
-          <span class="tag">Next.js</span>
-          <span class="tag">Community</span>
-          <span class="tag">Stripe</span>
-          <span class="tag">AI Features</span>
+      <!-- ── FFF ── -->
+      <div class="proj-panel" id="proj-fff">
+        <div class="proj-layout web-layout">
+
+          <div class="browser-stage">
+            <div class="browser-chrome">
+              <div class="browser-bar">
+                <div class="browser-dots">
+                  <span class="bdot bdot-r"></span>
+                  <span class="bdot bdot-y"></span>
+                  <span class="bdot bdot-g"></span>
+                </div>
+                <div class="browser-url">
+                  <span class="url-lock">🔒</span>
+                  <span>b00902149.github.io/FFFweb</span>
+                </div>
+                <a href="https://b00902149.github.io/FFFweb/" target="_blank" rel="noopener" class="browser-ext" title="Open live site">↗</a>
+              </div>
+              <div class="browser-view screenshot-view">
+                <div class="screenshot-scroll">
+                  <img src="assets/images/FFF.png" alt="FFF website screenshot" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="proj-info">
+            <div class="proj-type-tag">✝️ App · Marketing</div>
+            <h3 class="proj-name">FFF — Faith. Fitness. Fuel.</h3>
+            <p class="proj-desc">Marketing site for a faith-based fitness app built in React Native. Bold dark editorial design with animated ticker, scroll-reveal sections, and interactive app previews. Demonstrates all three pillars: Faith, Fitness, and Nutrition.</p>
+
+            <div class="proj-features">
+              <div class="proj-feat"><span>🎨</span> Bold dark editorial design</div>
+              <div class="proj-feat"><span>✨</span> Scroll-reveal animations</div>
+              <div class="proj-feat"><span>📱</span> Interactive app preview</div>
+              <div class="proj-feat"><span>📋</span> Waitlist CTA + FAQ</div>
+            </div>
+
+            <div class="proj-stack">
+              <span class="tag">HTML</span>
+              <span class="tag">CSS</span>
+              <span class="tag">JavaScript</span>
+              <span class="tag">React Native</span>
+              <span class="tag">Claude API</span>
+            </div>
+
+            <div class="proj-actions">
+              <a href="https://b00902149.github.io/FFFweb/" target="_blank" rel="noopener" class="btn-primary">View Live →</a>
+            </div>
+          </div>
+
         </div>
       </div>
 
-      <!-- Bespoke Client Sites -->
-      <div class="project-card reveal">
-        <div class="project-glow" style="background:#f59e0b;"></div>
-        <div class="project-num">04 · WEB</div>
-        <div class="project-title">BESPOKE CLIENT SITES</div>
-        <p class="project-desc">Custom websites built from scratch — no templates, no page builders. Unique design, fast performance, and CMS integration so clients can manage content themselves.</p>
-        <div class="project-stack">
-          <span class="tag">React</span>
-          <span class="tag">CMS</span>
-          <span class="tag">SEO</span>
-          <span class="tag">Custom Design</span>
+      <!-- ── PORTFOLIO ── -->
+      <div class="proj-panel" id="proj-portfolio">
+        <div class="proj-layout web-layout">
+
+          <div class="browser-stage">
+            <div class="browser-chrome">
+              <div class="browser-bar">
+                <div class="browser-dots">
+                  <span class="bdot bdot-r"></span>
+                  <span class="bdot bdot-y"></span>
+                  <span class="bdot bdot-g"></span>
+                </div>
+                <div class="browser-url">
+                  <span class="url-lock">🔒</span>
+                  <span>b00902149.github.io/portfolio</span>
+                </div>
+                <a href="https://b00902149.github.io/portfolio/" target="_blank" rel="noopener" class="browser-ext" title="Open live site">↗</a>
+              </div>
+              <div class="browser-view screenshot-view">
+                <div class="screenshot-scroll">
+                  <img src="assets/images/Portfolio.png" alt="Portfolio website screenshot" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="proj-info">
+            <div class="proj-type-tag">💼 Developer Portfolio</div>
+            <h3 class="proj-name">Developer Portfolio</h3>
+            <p class="proj-desc">Personal portfolio showcasing full-stack and mobile projects, technical skills, and academic work. Features interactive project cards, skills matrix, and a contact form — all in a clean dark single-page layout.</p>
+
+            <div class="proj-features">
+              <div class="proj-feat"><span>🗂️</span> Full project showcase</div>
+              <div class="proj-feat"><span>🛠️</span> Skills matrix</div>
+              <div class="proj-feat"><span>📬</span> Contact form</div>
+              <div class="proj-feat"><span>🎨</span> Scroll-reveal animations</div>
+            </div>
+
+            <div class="proj-stack">
+              <span class="tag">HTML</span>
+              <span class="tag">CSS</span>
+              <span class="tag">JavaScript</span>
+              <span class="tag">GitHub Pages</span>
+            </div>
+
+            <div class="proj-actions">
+              <a href="https://b00902149.github.io/portfolio/" target="_blank" rel="noopener" class="btn-primary">View Live →</a>
+            </div>
+          </div>
+
         </div>
       </div>
 
-    </div>
+    </div><!-- /proj-panels -->
   </section>
 
   <!-- ══ ABOUT ══════════════════════════════════════════════════ -->
@@ -251,79 +528,75 @@
 
   </section>
 
-  <!-- ══ AGENT SECTION ══════════════════════════════════════════ -->
-  <section id="agent-section">
+  <!-- ══ AI DEMO SECTION ═══════════════════════════════════════ -->
+  <section id="ai-demo">
     <div class="reveal">
-      <div class="section-tag">// Live Demo · DevAgent</div>
-      <div class="section-title">TRY THE AI<br>AGENT LIVE</div>
-      <p class="section-sub">These are the same AI agents I use to run my freelance business. Pick one and see how it works — client intake, proposals, scoping, or invoicing.</p>
+      <div class="section-tag">// Live Demo · AI Integration</div>
+      <div class="section-title">SEE AI IN<br>ACTION</div>
+      <p class="section-sub">Pick a business type and chat with a live AI assistant — trained, branded, and ready to serve customers. This is what I build.</p>
     </div>
 
-    <div class="agent-showcase reveal">
-      <div class="agent-tabs">
-        <button class="agent-tab active" onclick="switchTab('intake')">🎯 Client Intake</button>
-        <button class="agent-tab" onclick="switchTab('proposal')">📋 Proposal Gen</button>
-        <button class="agent-tab" onclick="switchTab('scope')">🗺️ Scope Builder</button>
-        <button class="agent-tab" onclick="switchTab('invoice')">💳 Invoice / Contract</button>
+    <div class="ai-demo-wrap reveal">
+
+      <!-- Business type picker -->
+      <div class="biz-picker">
+        <button class="biz-btn active" data-biz="restaurant">
+          <span class="biz-ico">🍽️</span>
+          <span class="biz-name">Restaurant</span>
+        </button>
+        <button class="biz-btn" data-biz="gym">
+          <span class="biz-ico">🏋️</span>
+          <span class="biz-name">Gym</span>
+        </button>
+        <button class="biz-btn" data-biz="ecom">
+          <span class="biz-ico">🛍️</span>
+          <span class="biz-name">E-commerce</span>
+        </button>
+        <button class="biz-btn" data-biz="salon">
+          <span class="biz-ico">✂️</span>
+          <span class="biz-name">Salon</span>
+        </button>
+        <button class="biz-btn" data-biz="coach">
+          <span class="biz-ico">📈</span>
+          <span class="biz-name">Coaching</span>
+        </button>
       </div>
 
-      <!-- INTAKE -->
-      <div class="agent-panel active" id="panel-intake">
-        <div class="quick-chips">
-          <button class="chip" onclick="qsend('intake','I have a new mobile app lead, e-commerce focused')">Mobile app lead</button>
-          <button class="chip" onclick="qsend('intake','Client wants a bespoke website with AI chatbot')">Website + AI</button>
-          <button class="chip" onclick="qsend('intake','Small business needs a booking system')">Booking system</button>
+      <!-- Chat window -->
+      <div class="demo-chat">
+        <!-- Chat header -->
+        <div class="demo-chat-header">
+          <div class="demo-chat-av" id="demoAv">🍽️</div>
+          <div class="demo-chat-meta">
+            <div class="demo-chat-name" id="demoName">Rosa's Kitchen</div>
+            <div class="demo-chat-status">
+              <span class="demo-status-dot"></span>AI assistant · online
+            </div>
+          </div>
+          <div class="demo-chat-badge" id="demoBadge">Italian Restaurant</div>
         </div>
-        <div class="chat-win" id="win-intake"></div>
-        <div class="agent-input-row">
-          <textarea id="inp-intake" rows="1" placeholder="Describe your client lead..." onkeydown="ak(event,'intake')" oninput="ar(this)"></textarea>
-          <button class="agent-send" id="btn-intake" onclick="go('intake')">➤</button>
-        </div>
-      </div>
 
-      <!-- PROPOSAL -->
-      <div class="agent-panel" id="panel-proposal">
-        <div class="quick-chips">
-          <button class="chip" onclick="qsend('proposal','React Native fitness app, £8-12k, 3 months')">Fitness app £8-12k</button>
-          <button class="chip" onclick="qsend('proposal','AI-integrated e-commerce, £5k, 6 weeks')">E-commerce + AI</button>
-          <button class="chip" onclick="qsend('proposal','Custom portfolio site, £2k, 3 weeks')">Portfolio site</button>
-        </div>
-        <div class="chat-win" id="win-proposal"></div>
-        <div class="agent-input-row">
-          <textarea id="inp-proposal" rows="1" placeholder="Describe the project for a proposal..." onkeydown="ak(event,'proposal')" oninput="ar(this)"></textarea>
-          <button class="agent-send" id="btn-proposal" onclick="go('proposal')">➤</button>
-        </div>
-      </div>
+        <!-- Messages -->
+        <div class="demo-messages" id="demoMessages"></div>
 
-      <!-- SCOPE -->
-      <div class="agent-panel" id="panel-scope">
-        <div class="quick-chips">
-          <button class="chip" onclick="qsend('scope','React Native app with auth, AI coaching, notifications')">React Native + AI</button>
-          <button class="chip" onclick="qsend('scope','Next.js e-commerce with Stripe and dashboard')">Next.js store</button>
-          <button class="chip" onclick="qsend('scope','Community platform with coaching and live sessions')">CoachingHub type</button>
-        </div>
-        <div class="chat-win" id="win-scope"></div>
-        <div class="agent-input-row">
-          <textarea id="inp-scope" rows="1" placeholder="Describe the project to scope..." onkeydown="ak(event,'scope')" oninput="ar(this)"></textarea>
-          <button class="agent-send" id="btn-scope" onclick="go('scope')">➤</button>
-        </div>
-      </div>
+        <!-- Suggestion chips -->
+        <div class="demo-suggestions" id="demoSuggestions"></div>
 
-      <!-- INVOICE -->
-      <div class="agent-panel" id="panel-invoice">
-        <div class="quick-chips">
-          <button class="chip" onclick="qsend('invoice','Invoice for £4,500 web project, 50% paid upfront')">Invoice 50/50</button>
-          <button class="chip" onclick="qsend('invoice','Freelance contract for 3-month mobile app, £10k, 3 milestones')">Freelance contract</button>
-          <button class="chip" onclick="qsend('invoice','Invoice for 20hrs consulting at £85/hr')">Consulting invoice</button>
-        </div>
-        <div class="chat-win" id="win-invoice"></div>
-        <div class="agent-input-row">
-          <textarea id="inp-invoice" rows="1" placeholder="Describe what to invoice or contract..." onkeydown="ak(event,'invoice')" oninput="ar(this)"></textarea>
-          <button class="agent-send" id="btn-invoice" onclick="go('invoice')">➤</button>
+        <!-- Input -->
+        <div class="demo-input-row">
+          <input type="text" id="demoInput" placeholder="Ask anything..." autocomplete="off" />
+          <button class="demo-send" id="demoSend">➤</button>
         </div>
       </div>
 
     </div>
+
+    <!-- CTA below demo -->
+    <div class="ai-demo-cta reveal">
+      <p>Every project I build can include a live AI assistant like this one — trained on your business, embedded in your site, and talking to your customers 24/7.</p>
+      <a href="#contact" class="btn-primary">Get a Quote →</a>
+    </div>
+
   </section>
 
   <!-- ══ CONTACT ════════════════════════════════════════════════ -->
@@ -428,7 +701,7 @@
             <label>TELL ME ABOUT YOUR PROJECT</label>
             <textarea id="f-desc" placeholder="What are you building, who's it for, and what problem does it solve?"></textarea>
           </div>
-          <button class="form-submit" onclick="submitForm()">Send Quote Request →</button>
+          <button class="form-submit" id="form-submit-btn" onclick="submitForm()">Send Quote Request →</button>
         </div>
         <div class="form-success" id="form-success">
           <div class="check">✅</div>
@@ -442,7 +715,7 @@
 
   <!-- ══ FOOTER ════════════════════════════════════════════════ -->
   <footer>
-    <div class="footer-logo">DALLASTECH</div>
+    <img src="./assets/images/Logofull.svg" alt="Dallas Digital Logo" width="220">
     <div class="footer-links">
       <a href="#services">Services</a>
       <a href="#projects">Work</a>
@@ -452,7 +725,7 @@
     <div class="footer-copy">© 2025 Adrian Dallas · All rights reserved</div>
   </footer>
 
-  <!-- Scripts — deferred for performance -->
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
   <script src="assets/js/Main.js" defer></script>
 
 </body>

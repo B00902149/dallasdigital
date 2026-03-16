@@ -1,5 +1,5 @@
 /* ============================================================
-   DallasTech Portfolio — main.js
+   DallasTech Portfolio — Main.js
    Adrian Dallas · adriandallas.dev
    ============================================================ */
 
@@ -33,165 +33,410 @@ const revealObserver = new IntersectionObserver(entries => {
 
 document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
 
-/* ── AGENT SYSTEM PROMPTS ─────────────────────────────────── */
-const SYS = {
-  intake: `You are a Client Intake Agent for Adrian Dallas (DallasTech), a UK-based freelance developer specialising in mobile apps, web apps, and AI integration. Run structured discovery on new client leads. Ask focused questions 1-2 at a time to extract: project type, key features, target users, budget (GBP), timeline, existing tech, AI interest, and pain points. When you have enough info, output a clean INTAKE SUMMARY.`,
+/* ══════════════════════════════════════════════════════════════
+   PROJECT SHOWCASE
+   ══════════════════════════════════════════════════════════════ */
 
-  proposal: `You are a Proposal Generator for Adrian Dallas (DallasTech), UK freelance developer. Generate professional, client-ready proposals. Include: project overview, deliverables, technical approach, AI integration (if applicable), week-by-week timeline, pricing in GBP (Standard vs Premium tiers), payment terms (50% upfront), and next steps. Ask for details if needed.`,
+/* ── Project tab switching ── */
+(function initProjTabs() {
+  const btns   = document.querySelectorAll('.proj-tab-btn');
+  const panels = document.querySelectorAll('.proj-panel');
 
-  scope: `You are a Project Scope Builder for Adrian Dallas (DallasTech). Break projects into phases, milestones, tasks with hour estimates, recommended tech stack, AI integration points, risk register, and total cost calculation in GBP. Be thorough and technically precise.`,
+  btns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.proj;
 
-  invoice: `You are an Invoice & Contract Agent for Adrian Dallas (DallasTech), UK freelance developer. Draft professional UK-compliant invoices (including Late Payment Act 1998 reference) and freelance contracts (IP transfer on final payment, kill fees, revision limits, governing law: England & Wales). Ask what's needed and gather details.`
-};
+      btns.forEach(b => b.classList.remove('active'));
+      panels.forEach(p => p.classList.remove('active'));
 
-/* ── AGENT GREETING MESSAGES ──────────────────────────────── */
-const GREET = {
-  intake:   `👋 <b>Client Intake Agent</b> — Tell me about your new lead. Paste their enquiry or describe the project and I'll run a full structured discovery.`,
-  proposal: `📋 <b>Proposal Generator</b> — Give me the project details (type, features, budget, timeline) and I'll produce a professional, client-ready proposal.`,
-  scope:    `🗺️ <b>Scope Builder</b> — Describe your project and I'll break it into phases, milestones, hour estimates, and a risk register.`,
-  invoice:  `💳 <b>Invoice & Contract Agent</b> — Need an invoice, a freelance contract, or both? Tell me the project details and I'll draft a UK-compliant document.`
-};
+      btn.classList.add('active');
+      const panel = document.getElementById('proj-' + target);
+      if (panel) panel.classList.add('active');
 
-/* ── CONVERSATION HISTORIES ───────────────────────────────── */
-const hists = { intake: [], proposal: [], scope: [], invoice: [] };
+      // Pause/resume carousel auto-advance based on active tab
+      if (target === 'app') {
+        startCarouselAuto();
+      } else {
+        stopCarouselAuto();
+      }
+    });
+  });
+})();
 
-/* ── INIT GREETINGS ON LOAD ───────────────────────────────── */
-window.addEventListener('load', () => {
-  ['intake', 'proposal', 'scope', 'invoice'].forEach(a => amsg(a, 'ai', GREET[a]));
+
+
+/* ── Phone carousel ── */
+let carCurrent  = 0;
+let carAutoTimer = null;
+const TOTAL_SCREENS = 8;
+const FRAME_WIDTH   = 220;
+
+const phoneTrack = document.querySelector('.phone-track');
+const carDots    = document.querySelectorAll('.car-dot');
+const carLeft    = document.querySelector('.car-left');
+const carRight   = document.querySelector('.car-right');
+
+function carGoTo(index) {
+  carCurrent = ((index % TOTAL_SCREENS) + TOTAL_SCREENS) % TOTAL_SCREENS;
+  if (phoneTrack) {
+    phoneTrack.style.transform = `translateX(-${carCurrent * FRAME_WIDTH}px)`;
+  }
+  carDots.forEach((d, i) => d.classList.toggle('active', i === carCurrent));
+}
+
+function startCarouselAuto() {
+  stopCarouselAuto();
+  carAutoTimer = setInterval(() => carGoTo(carCurrent + 1), 4000);
+}
+
+function stopCarouselAuto() {
+  if (carAutoTimer) { clearInterval(carAutoTimer); carAutoTimer = null; }
+}
+
+if (carLeft)  carLeft.addEventListener('click',  () => { carGoTo(carCurrent - 1); startCarouselAuto(); });
+if (carRight) carRight.addEventListener('click', () => { carGoTo(carCurrent + 1); startCarouselAuto(); });
+
+carDots.forEach(dot => {
+  dot.addEventListener('click', () => {
+    carGoTo(parseInt(dot.dataset.i, 10));
+    startCarouselAuto();
+  });
 });
 
-/* ── TAB SWITCHING ────────────────────────────────────────── */
-function switchTab(agent) {
-  const agents = ['intake', 'proposal', 'scope', 'invoice'];
-  document.querySelectorAll('.agent-tab').forEach((tab, i) => {
-    tab.classList.toggle('active', agents[i] === agent);
+// Touch/swipe support for carousel
+if (phoneTrack) {
+  let touchStartX = 0;
+  phoneTrack.addEventListener('touchstart', e => {
+    touchStartX = e.touches[0].clientX;
+  }, { passive: true });
+  phoneTrack.addEventListener('touchend', e => {
+    const diff = touchStartX - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 40) {
+      carGoTo(diff > 0 ? carCurrent + 1 : carCurrent - 1);
+      startCarouselAuto();
+    }
   });
-  document.querySelectorAll('.agent-panel').forEach(p => p.classList.remove('active'));
-  document.getElementById('panel-' + agent).classList.add('active');
 }
 
-/* ── RENDER A CHAT MESSAGE ────────────────────────────────── */
-function amsg(agent, role, text) {
-  const win = document.getElementById('win-' + agent);
+// Start auto-advance on load (app tab is active by default)
+startCarouselAuto();
 
-  const d  = document.createElement('div');
-  d.className = 'msg' + (role === 'user' ? ' user' : '');
+/* ══════════════════════════════════════════════════════════════
+   AI DEMO — BUSINESS CHATBOT SHOWCASE
+   ══════════════════════════════════════════════════════════════ */
 
-  const av = document.createElement('div');
-  av.className = 'av ' + (role === 'ai' ? 'ai' : 'usr');
-  av.textContent = role === 'ai' ? '🤖' : '👤';
+const DEMO_BUSINESSES = {
+  restaurant: {
+    name: "Rosa's Kitchen",
+    badge: 'Italian Restaurant',
+    icon: '🍽️',
+    suggestions: ['What are your opening hours?', 'Do you take bookings?', 'What are your most popular dishes?', 'Do you have vegetarian options?'],
+    system: `You are a friendly AI assistant for Rosa's Kitchen, a cosy Italian restaurant in London. You handle reservations, answer menu questions, and help guests plan their visit. Opening hours: Mon–Sat 12–10pm, Sun 12–8pm. Popular dishes: Truffle Tagliatelle, Osso Buco, Tiramisu. You accept bookings via phone or this chat. Keep replies warm, concise, and under 80 words.`
+  },
+  gym: {
+    name: 'Peak Fitness',
+    badge: 'Local Gym',
+    icon: '🏋️',
+    suggestions: ['What memberships do you offer?', 'Do you have personal trainers?', 'What classes are on this week?', 'How do I cancel my membership?'],
+    system: `You are a helpful AI assistant for Peak Fitness, a modern gym in Manchester. Memberships: Basic £25/mo, Premium £45/mo (includes classes). Facilities: pool, sauna, free weights, cardio zone. Trial day passes £10. Be motivating and supportive. Keep replies concise and under 80 words.`
+  },
+  ecom: {
+    name: 'Noor Studio',
+    badge: 'Online Fashion',
+    icon: '🛍️',
+    suggestions: ["What are your delivery times?", 'Can I return an item?', 'Do you have this in a size 12?', 'What payment methods do you accept?'],
+    system: `You are a friendly AI customer service assistant for Noor Studio, a UK-based women's fashion boutique. Returns: 30-day free returns policy. Delivery: 2–3 days standard, next-day available. Payment: all major cards, PayPal, Klarna. Current promotion: 20% off summer collection with code SUMMER20. Keep replies helpful, stylish, and under 80 words.`
+  },
+  salon: {
+    name: 'Luxe Hair & Beauty',
+    badge: 'Hair Salon',
+    icon: '✂️',
+    suggestions: ['What services do you offer?', 'How much is a cut and colour?', 'Can I book an appointment?', 'Do you do bridal packages?'],
+    system: `You are a warm AI assistant for Luxe Hair & Beauty, a premium salon in Birmingham. Pricing: Cut & Blow dry from £45, Full colour from £85, Balayage from £120, Bridal packages from £200. Open Tue–Sat 9am–7pm. You can book appointments directly in this chat. Keep replies friendly and under 80 words.`
+  },
+  coach: {
+    name: 'GrowthEdge',
+    badge: 'Business Coaching',
+    icon: '📈',
+    suggestions: ['What programmes do you offer?', 'How is the first session structured?', 'What results do your clients get?', 'How much does it cost?'],
+    system: `You are an AI assistant for GrowthEdge, a business coaching company helping entrepreneurs scale from £100k to £1M+. Programmes: 90-day intensive £2,500, 6-month mastermind £6,000. You book discovery calls and answer questions about the coaching approach. Be confident and results-focused. Keep replies under 80 words.`
+  }
+};
+
+let demoHistory = [];
+let demoBusy    = false;
+let currentBiz  = 'restaurant';
+
+/* ── DOM refs ── */
+const demoMessages    = document.getElementById('demoMessages');
+const demoSuggestions = document.getElementById('demoSuggestions');
+const demoInput       = document.getElementById('demoInput');
+const demoSend        = document.getElementById('demoSend');
+const demoAv          = document.getElementById('demoAv');
+const demoName        = document.getElementById('demoName');
+const demoBadge       = document.getElementById('demoBadge');
+
+/* ── Render message ── */
+function demoAddMsg(role, text) {
+  const row = document.createElement('div');
+  row.className = 'demo-msg-row' + (role === 'user' ? ' demo-user' : '');
+
+  if (role === 'ai') {
+    const av = document.createElement('div');
+    av.className = 'demo-mini-av';
+    av.textContent = DEMO_BUSINESSES[currentBiz].icon;
+    row.appendChild(av);
+  }
 
   const b = document.createElement('div');
-  b.className = 'bbl';
-  b.innerHTML = text
-    .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
-    .replace(/\n/g, '<br>');
+  b.className = 'demo-bubble ' + role;
+  b.innerHTML = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
+  row.appendChild(b);
 
-  d.appendChild(av);
-  d.appendChild(b);
-  win.appendChild(d);
-  win.scrollTop = win.scrollHeight;
+  demoMessages.appendChild(row);
+  demoMessages.scrollTop = demoMessages.scrollHeight;
 }
 
-/* ── TYPING INDICATOR ─────────────────────────────────────── */
-function atyping(agent) {
-  const win = document.getElementById('win-' + agent);
-  const d   = document.createElement('div');
-  d.className = 'msg';
-  d.id = 'ty-' + agent;
-
+/* ── Typing indicator ── */
+function demoShowTyping() {
+  const row = document.createElement('div');
+  row.className = 'demo-msg-row';
+  row.id = 'demo-typing';
   const av = document.createElement('div');
-  av.className = 'av ai';
-  av.textContent = '🤖';
-
+  av.className = 'demo-mini-av';
+  av.textContent = DEMO_BUSINESSES[currentBiz].icon;
   const b = document.createElement('div');
-  b.className = 'bbl';
-  b.innerHTML = '<div class="typing-ind"><span></span><span></span><span></span></div>';
-
-  d.appendChild(av);
-  d.appendChild(b);
-  win.appendChild(d);
-  win.scrollTop = win.scrollHeight;
+  b.className = 'demo-bubble ai';
+  b.innerHTML = '<div class="demo-typing-dots"><span></span><span></span><span></span></div>';
+  row.appendChild(av);
+  row.appendChild(b);
+  demoMessages.appendChild(row);
+  demoMessages.scrollTop = demoMessages.scrollHeight;
 }
 
-function rtyping(agent) {
-  const el = document.getElementById('ty-' + agent);
+function demoRemoveTyping() {
+  const el = document.getElementById('demo-typing');
   if (el) el.remove();
 }
 
-/* ── SEND MESSAGE TO CLAUDE API ───────────────────────────── */
-async function go(agent) {
-  const inp = document.getElementById('inp-' + agent);
-  const txt = inp.value.trim();
-  if (!txt) return;
+/* ── Render suggestion chips ── */
+function demoRenderSuggestions(sugs) {
+  demoSuggestions.innerHTML = '';
+  sugs.forEach(s => {
+    const btn = document.createElement('button');
+    btn.className = 'demo-sug';
+    btn.textContent = s;
+    btn.addEventListener('click', () => { demoInput.value = s; demoSendMsg(); });
+    demoSuggestions.appendChild(btn);
+  });
+}
 
-  inp.value = '';
-  inp.style.height = 'auto';
-  document.getElementById('btn-' + agent).disabled = true;
+/* ── Load a business ── */
+function demoLoadBiz(bizKey) {
+  currentBiz = bizKey;
+  const biz = DEMO_BUSINESSES[bizKey];
+  demoHistory = [];
+  demoMessages.innerHTML = '';
+  demoSuggestions.innerHTML = '';
 
-  amsg(agent, 'user', txt);
-  hists[agent].push({ role: 'user', content: txt });
-  atyping(agent);
+  demoAv.textContent    = biz.icon;
+  demoName.textContent  = biz.name;
+  demoBadge.textContent = biz.badge;
+
+  const greeting = `Hi! I'm the AI assistant for ${biz.name}. How can I help you today?`;
+  demoAddMsg('ai', greeting);
+  demoHistory.push({ role: 'assistant', content: greeting });
+  demoRenderSuggestions(biz.suggestions);
+  demoInput.focus();
+}
+
+/* ── Fetch contextual follow-up suggestions ── */
+async function demoFetchSuggestions(conversationSoFar) {
+  const sugSystem = `You generate exactly 3 short follow-up questions a customer might ask next in a conversation with a business AI assistant. Return ONLY a JSON array of 3 strings, no preamble, no markdown, no explanation. Example: ["Question one?","Question two?","Question three?"]`;
+
+  const lastExchange = conversationSoFar.slice(-4);
 
   try {
     const res = await fetch('/api/claude', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        system: SYS[agent],
-        messages: hists[agent]
+        model: 'llama-3.3-70b-versatile',
+        max_tokens: 120,
+        system: sugSystem,
+        messages: [
+          {
+            role: 'user',
+            content: 'Conversation so far:\n' + lastExchange.map(m => m.role + ': ' + m.content).join('\n') + '\n\nGenerate 3 natural follow-up questions the customer might ask next.'
+          }
+        ]
       })
     });
+    const data = await res.json();
+    const raw  = (data.content?.[0]?.text || '').trim().replace(/```json|```/g, '').trim();
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed) && parsed.length) return parsed.slice(0, 3);
+  } catch (_) {}
 
-    const data  = await res.json();
-    const reply = data.content?.[0]?.text || 'Sorry, unable to generate a response.';
+  // Fallback to static suggestions if parse fails
+  return DEMO_BUSINESSES[currentBiz].suggestions.slice(0, 3);
+}
 
-    rtyping(agent);
-    hists[agent].push({ role: 'assistant', content: reply });
-    amsg(agent, 'ai', reply);
+/* ── Send message via Groq proxy ── */
+async function demoSendMsg() {
+  const txt = demoInput.value.trim();
+  if (!txt || demoBusy) return;
+
+  demoInput.value = '';
+  demoBusy = true;
+  demoSend.disabled = true;
+  demoSuggestions.innerHTML = '';
+
+  demoAddMsg('user', txt);
+  demoHistory.push({ role: 'user', content: txt });
+  demoShowTyping();
+
+  try {
+    // Main reply + follow-up suggestions fetched in parallel
+    const [replyRes, suggestions] = await Promise.all([
+      fetch('/api/claude', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          max_tokens: 300,
+          system: DEMO_BUSINESSES[currentBiz].system,
+          messages: demoHistory
+        })
+      }),
+      demoFetchSuggestions(demoHistory)
+    ]);
+
+    const data  = await replyRes.json();
+    const reply = data.content?.[0]?.text || 'Sorry, something went wrong. Please try again.';
+
+    demoRemoveTyping();
+    demoHistory.push({ role: 'assistant', content: reply });
+    demoAddMsg('ai', reply);
+    demoRenderSuggestions(suggestions);
 
   } catch (err) {
-    rtyping(agent);
-    amsg(agent, 'ai', `⚠️ API error: ${err.message}`);
+    demoRemoveTyping();
+    demoAddMsg('ai', '⚠️ Connection error. Please try again.');
+    demoRenderSuggestions(DEMO_BUSINESSES[currentBiz].suggestions.slice(0, 3));
   }
 
-  document.getElementById('btn-' + agent).disabled = false;
-  document.getElementById('inp-' + agent).focus();
+  demoBusy = false;
+  demoSend.disabled = false;
+  demoInput.focus();
 }
 
-/* ── QUICK-CHIP SEND ──────────────────────────────────────── */
-function qsend(agent, txt) {
-  switchTab(agent);
-  document.getElementById('inp-' + agent).value = txt;
-  go(agent);
-}
+/* ── Business picker buttons ── */
+document.querySelectorAll('.biz-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.biz-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    demoLoadBiz(btn.dataset.biz);
+  });
+});
 
-/* ── TEXTAREA HELPERS ─────────────────────────────────────── */
-function ak(e, agent) {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault();
-    go(agent);
+/* ── Send button & enter key ── */
+demoSend.addEventListener('click', demoSendMsg);
+demoInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); demoSendMsg(); }
+});
+
+/* ── Init on load ── */
+window.addEventListener('load', () => demoLoadBiz('restaurant'));
+
+/* ══════════════════════════════════════════════════════════════
+   CONTACT FORM — EmailJS
+   ══════════════════════════════════════════════════════════════
+ 
+   SETUP:
+   1. Sign up free at emailjs.com
+   2. Add an Email Service (Gmail, Outlook, etc.)
+   3. Create a Template using these variables:
+        {{from_name}}   — sender's name
+        {{from_email}}  — sender's email (set as Reply-To)
+        {{project_type}}
+        {{budget}}
+        {{timeline}}
+        {{message}}
+   4. Fill in your IDs below
+   ============================================================ */
+ 
+const EMAILJS_PUBLIC_KEY  = 'eqCN5Kh8sW0S5Zgg6';
+const EMAILJS_SERVICE_ID  = 'service_7sx9qtn';
+const EMAILJS_TEMPLATE_ID = 'template_cjvrusj';
+
+emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
+ 
+async function submitForm() {
+  const name     = document.getElementById('f-name').value.trim();
+  const email    = document.getElementById('f-email').value.trim();
+  const type     = document.getElementById('f-type').value;
+  const budget   = document.getElementById('f-budget').value;
+  const timeline = document.getElementById('f-timeline').value;
+  const desc     = document.getElementById('f-desc').value.trim();
+  const btn      = document.getElementById('form-submit-btn');
+ 
+  // ── Validation ──
+  if (!name) { formShakeField('f-name');  return; }
+  if (!email || !email.includes('@')) { formShakeField('f-email'); return; }
+  if (!type)  { formShakeField('f-type'); return; }
+ 
+  // ── Loading state ──
+  btn.disabled    = true;
+  btn.textContent = 'Sending...';
+  btn.style.opacity = '0.7';
+ 
+  try {
+    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+      from_name:    name,
+      from_email:   email,
+      project_type: type     || 'Not specified',
+      budget:       budget   || 'Not specified',
+      timeline:     timeline || 'Not specified',
+      message:      desc     || 'No description provided.',
+    });
+ 
+    // ── Success ──
+    document.getElementById('form-content').style.display = 'none';
+    document.getElementById('form-success').style.display = 'block';
+ 
+  } catch (err) {
+    // ── Error ──
+    btn.disabled    = false;
+    btn.textContent = 'Send Quote Request →';
+    btn.style.opacity = '1';
+    formShowError('Something went wrong — please try again or email me directly.');
+    console.error('EmailJS error:', err);
   }
 }
-
-function ar(el) {
-  el.style.height = 'auto';
-  el.style.height = Math.min(el.scrollHeight, 80) + 'px';
+ 
+/* ── Shake a field to indicate it's required ── */
+function formShakeField(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.style.borderColor = '#a855f7';
+  el.style.boxShadow   = '0 0 0 3px #7c3aed30';
+  el.focus();
+  setTimeout(() => {
+    el.style.borderColor = '';
+    el.style.boxShadow   = '';
+  }, 2000);
 }
-
-/* ── CONTACT FORM ─────────────────────────────────────────── */
-function submitForm() {
-  const name  = document.getElementById('f-name').value.trim();
-  const email = document.getElementById('f-email').value.trim();
-  const type  = document.getElementById('f-type').value;
-
-  if (!name || !email || !type) {
-    alert('Please fill in your name, email, and project type.');
-    return;
+ 
+/* ── Show inline error message ── */
+function formShowError(msg) {
+  let errEl = document.getElementById('form-error-msg');
+  if (!errEl) {
+    errEl = document.createElement('p');
+    errEl.id = 'form-error-msg';
+    errEl.style.cssText = 'color:#a855f7;font-size:0.82rem;margin-top:10px;text-align:center;';
+    document.getElementById('form-submit-btn').after(errEl);
   }
-
-  document.getElementById('form-content').style.display = 'none';
-  document.getElementById('form-success').style.display  = 'block';
+  errEl.textContent = msg;
+  setTimeout(() => { errEl.textContent = ''; }, 5000);
 }
