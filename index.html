@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
- <title>Dallas Digital - Adrian Dallas</title>
+  <title>Dallas Digital - Adrian Dallas</title>
   <link rel="icon" type="image/png" href="./assets/images/my-favicon/favicon-96x96.png" sizes="96x96" />
   <link rel="icon" type="image/svg+xml" href="./assets/images/my-favicon/favicon.svg" />
   <link rel="shortcut icon" href="./assets/images/my-favicon/favicon.ico" />
@@ -35,7 +35,23 @@
       <a href="#ai-demo">AI Demo</a>
       <a href="#contact" class="nav-cta">Get a Quote</a>
     </div>
+    <!-- Hamburger — mobile only -->
+    <button class="nav-hamburger" id="navHamburger" aria-label="Open menu">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
   </nav>
+
+  <!-- Mobile menu overlay -->
+  <div class="mobile-menu" id="mobileMenu">
+    <button class="mobile-menu-close" id="mobileMenuClose" aria-label="Close menu">✕</button>
+    <a href="#services" class="mobile-menu-link" onclick="closeMobileMenu()">Services</a>
+    <a href="#projects" class="mobile-menu-link" onclick="closeMobileMenu()">Work</a>
+    <a href="#about" class="mobile-menu-link" onclick="closeMobileMenu()">About</a>
+    <a href="#ai-demo" class="mobile-menu-link" onclick="closeMobileMenu()">AI Demo</a>
+    <a href="#contact" class="mobile-menu-cta" onclick="closeMobileMenu()">Get a Quote →</a>
+  </div>
 
   <!-- ══ HERO ═════════════════════════════════════════════════ -->
   <section id="hero">
@@ -786,7 +802,7 @@
 
   <!-- ══ FOOTER ════════════════════════════════════════════════ -->
   <footer>
-    <img src="assets/images/Logofull.svg" alt="Dallas Digital Logo">
+    <div class="footer-logo">DALLASTECH</div>
     <div class="footer-links">
       <a href="#services">Services</a>
       <a href="#projects">Work</a>
