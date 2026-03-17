@@ -60,7 +60,6 @@ document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
       const panel = document.getElementById('proj-' + target);
       if (panel) panel.classList.add('active');
 
-      // Pause/resume carousel auto-advance based on active tab
       if (target === 'app') {
         startCarouselAuto();
       } else {
@@ -69,8 +68,6 @@ document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
     });
   });
 })();
-
-
 
 /* ── Phone carousel ── */
 let carCurrent  = 0;
@@ -110,7 +107,6 @@ carDots.forEach(dot => {
   });
 });
 
-// Touch/swipe support for carousel
 if (phoneTrack) {
   let touchStartX = 0;
   phoneTrack.addEventListener('touchstart', e => {
@@ -125,7 +121,6 @@ if (phoneTrack) {
   });
 }
 
-// Start auto-advance on load (app tab is active by default)
 startCarouselAuto();
 
 /* ══════════════════════════════════════════════════════════════
@@ -238,8 +233,10 @@ function demoRenderSuggestions(sugs) {
   });
 }
 
-/* ── Load a business ── */
-function demoLoadBiz(bizKey) {
+/* ── Load a business ──
+   focus param: true when user clicks a tab (intentional interaction)
+                false on initial page load (prevents auto-scroll)      */
+function demoLoadBiz(bizKey, focus = false) {
   currentBiz = bizKey;
   const biz = DEMO_BUSINESSES[bizKey];
   demoHistory = [];
@@ -254,7 +251,9 @@ function demoLoadBiz(bizKey) {
   demoAddMsg('ai', greeting);
   demoHistory.push({ role: 'assistant', content: greeting });
   demoRenderSuggestions(biz.suggestions);
-  demoInput.focus();
+
+  // Only focus (and scroll) when the user has deliberately interacted
+  if (focus) demoInput.focus();
 }
 
 /* ── Fetch contextual follow-up suggestions ── */
@@ -285,7 +284,6 @@ async function demoFetchSuggestions(conversationSoFar) {
     if (Array.isArray(parsed) && parsed.length) return parsed.slice(0, 3);
   } catch (_) {}
 
-  // Fallback to static suggestions if parse fails
   return DEMO_BUSINESSES[currentBiz].suggestions.slice(0, 3);
 }
 
@@ -304,7 +302,6 @@ async function demoSendMsg() {
   demoShowTyping();
 
   try {
-    // Main reply + follow-up suggestions fetched in parallel
     const [replyRes, suggestions] = await Promise.all([
       fetch(`${API_BASE}/api/claude`, {
         method: 'POST',
@@ -335,7 +332,6 @@ async function demoSendMsg() {
 
   demoBusy = false;
   demoSend.disabled = false;
-  demoInput.focus();
 }
 
 /* ── Business picker buttons ── */
@@ -343,7 +339,7 @@ document.querySelectorAll('.biz-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.biz-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    demoLoadBiz(btn.dataset.biz);
+    demoLoadBiz(btn.dataset.biz, true);  // focus=true — user clicked intentionally
   });
 });
 
@@ -353,8 +349,8 @@ demoInput.addEventListener('keydown', e => {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); demoSendMsg(); }
 });
 
-/* ── Init on load ── */
-window.addEventListener('load', () => demoLoadBiz('restaurant'));
+/* ── Init on load — focus=false prevents auto-scroll to AI demo ── */
+window.addEventListener('load', () => demoLoadBiz('restaurant', false));
 
 /* ══════════════════════════════════════════════════════════════
    CONTACT FORM — EmailJS confirmation + AI quote workflow
@@ -395,7 +391,6 @@ async function submitForm() {
   const desc     = document.getElementById('f-desc').value.trim();
   const btn      = document.getElementById('form-submit-btn');
 
-  // Collect platform checkboxes
   const platforms = ['f-plat-web','f-plat-ios','f-plat-android','f-plat-both','f-plat-notsure']
     .filter(id => document.getElementById(id)?.checked)
     .map(id => document.getElementById(id).value)
@@ -454,7 +449,6 @@ async function submitForm() {
           message:      desc     || 'No description provided.',
         });
       } catch (ejsErr) {
-        // EmailJS failure doesn't block success — quote still generated
         console.warn('EmailJS confirmation skipped:', ejsErr.text || ejsErr.message);
       }
     }
