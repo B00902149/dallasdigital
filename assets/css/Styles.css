@@ -147,7 +147,6 @@ nav {
   padding: 20px 60px;
   display: flex; align-items: center; justify-content: space-between;
   background: linear-gradient(to bottom, var(--bg) 60%, transparent);
-  overflow: hidden;
 }
 .nav-logo {
   font-family: 'Bebas Neue', sans-serif;
@@ -1285,10 +1284,10 @@ footer {
 
 @media (max-width: 768px) {
   section { padding: 80px 24px; }
-  nav { padding: 16px 20px; gap: 12px; overflow: hidden; }
+  nav { padding: 14px 20px; }
   .nav-links { display: none; }
-  .nav-logo img { width: 120px; max-width: 120px; }
-  .nav-cta { padding: 8px 14px; font-size: 0.75rem !important; white-space: nowrap; flex-shrink: 0; }
+  .nav-logo img { width: 150px; max-width: 150px; }
+  .nav-cta { display: none !important; }
   #hero { padding: 100px 24px 60px; }
   .hero-stats { gap: 24px; flex-wrap: wrap; }
   .services-grid { grid-template-columns: 1fr; }
