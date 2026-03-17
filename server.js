@@ -13,7 +13,7 @@ const cors         = require('cors');
 const fetch        = require('node-fetch');
 const path         = require('path');
 const crypto       = require('crypto');
-const nodemailer   = require('nodemailer');
+const sgMail       = require('@sendgrid/mail');
 require('dotenv').config();
 
 const app  = express();
@@ -30,19 +30,11 @@ app.use(express.static(path.join(__dirname)));
 // { [token]: { quoteText, lead, createdAt } }
 const pendingQuotes = new Map();
 
-// ── Nodemailer transporter (Gmail SMTP) ─────────────────────
-const transporter = nodemailer.createTransport({
-  host:   'smtp.gmail.com',
-  port:   587,
-  secure: false,          // TLS via STARTTLS — works on Railway
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_APP_PASSWORD
-  },
-  tls: {
-    rejectUnauthorized: false
-  }
-});
+// ── SendGrid ─────────────────────────────────────────────────
+// Uses HTTPS (port 443) — works on Railway free tier.
+// Setup: sendgrid.com → API Keys → Create Key (Full Access)
+//        Settings → Sender Authentication → verify your sender email
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 // ============================================================
 // ROUTE: POST /api/claude
@@ -120,16 +112,15 @@ async function callGroq(system, userMessage, maxTokens = 1500) {
 
 // ============================================================
 // SHARED HELPER: sendMail
-// Sends HTML email via Nodemailer/Gmail SMTP.
-// Replaces sendViaEmailJS — no templates needed, full HTML control.
+// Sends HTML email via SendGrid API (HTTPS — works on Railway).
 // ============================================================
 async function sendMail({ to, subject, html, replyTo }) {
-  await transporter.sendMail({
-    from:     `"DallasTech" <${process.env.GMAIL_USER}>`,
+  await sgMail.send({
     to,
+    from:     process.env.SENDGRID_FROM_EMAIL,  // must be verified in SendGrid
     subject,
     html,
-    replyTo:  replyTo || process.env.GMAIL_USER
+    replyTo:  replyTo || process.env.SENDGRID_FROM_EMAIL
   });
 }
 
@@ -629,10 +620,10 @@ app.listen(PORT, async () => {
   console.log(`🔍 Checking .env configuration...`);
 
   const required = {
-    GROQ_API_KEY:       process.env.GROQ_API_KEY,
-    GMAIL_USER:         process.env.GMAIL_USER,
-    GMAIL_APP_PASSWORD: process.env.GMAIL_APP_PASSWORD,
-    ADMIN_EMAIL:        process.env.ADMIN_EMAIL,
+    GROQ_API_KEY:         process.env.GROQ_API_KEY,
+    SENDGRID_API_KEY:     process.env.SENDGRID_API_KEY,
+    SENDGRID_FROM_EMAIL:  process.env.SENDGRID_FROM_EMAIL,
+    ADMIN_EMAIL:          process.env.ADMIN_EMAIL,
   };
 
   let envOk = true;
@@ -654,20 +645,18 @@ app.listen(PORT, async () => {
     return;
   }
 
-  // ── Test Gmail SMTP connection ───────────────────────────
-  console.log(`\n📧 Testing Gmail SMTP connection...`);
-  try {
-    await transporter.verify();
-    console.log(`   ✅ Gmail SMTP connected — ready to send as ${process.env.GMAIL_USER}`);
-  } catch (err) {
-    console.log(`   ❌ Gmail SMTP failed: ${err.message}`);
-    console.log(`\n   Common fixes:`);
-    console.log(`   • Make sure GMAIL_APP_PASSWORD is an App Password (16 chars)`);
-    console.log(`     NOT your regular Gmail password`);
-    console.log(`   • Generate one at: myaccount.google.com → Security → App Passwords`);
-    console.log(`   • 2-Step Verification must be enabled on your Google account`);
-    console.log(`   • If using a Google Workspace account, App Passwords may be`);
-    console.log(`     disabled by your admin — try a personal Gmail instead`);
+  // ── Validate SendGrid config ─────────────────────────────
+  console.log(`\n📧 Checking SendGrid configuration...`);
+  if (!process.env.SENDGRID_API_KEY || process.env.SENDGRID_API_KEY.startsWith('YOUR_')) {
+    console.log(`   ❌ SENDGRID_API_KEY — missing or placeholder`);
+    console.log(`   Get one free at: sendgrid.com → API Keys`);
+  } else if (!process.env.SENDGRID_FROM_EMAIL || process.env.SENDGRID_FROM_EMAIL.startsWith('YOUR_')) {
+    console.log(`   ❌ SENDGRID_FROM_EMAIL — missing or placeholder`);
+    console.log(`   Must match a verified sender in SendGrid → Sender Authentication`);
+  } else {
+    console.log(`   ✅ SendGrid API key set`);
+    console.log(`   ✅ Sending from: ${process.env.SENDGRID_FROM_EMAIL}`);
+    console.log(`   ✅ Ready to send emails via HTTPS`);
   }
 
   console.log(`${'─'.repeat(55)}\n`);
