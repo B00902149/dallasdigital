@@ -10,7 +10,7 @@
    Deployed: set VITE_API_URL or just hardcode your Railway URL
    here once you have it, e.g. 'https://dallastech.up.railway.app'
    ────────────────────────────────────────────────────────── */
-const API_BASE = window.DALLASTECH_API_URL || '';
+const API_BASE = window.DALLASTECH_API_URL || 'https://dallasdigital-production.up.railway.app';
 
 /* ── CUSTOM CURSOR ────────────────────────────────────────── */
 const cur  = document.getElementById('cursor');
