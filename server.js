@@ -31,14 +31,16 @@ app.use(express.static(path.join(__dirname)));
 const pendingQuotes = new Map();
 
 // ── Nodemailer transporter (Gmail SMTP) ─────────────────────
-// Uses a Gmail App Password — NOT your regular Gmail password.
-// Setup: Google Account → Security → 2-Step Verification → App Passwords
-// Generate one for "Mail" and paste it as GMAIL_APP_PASSWORD in .env
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host:   'smtp.gmail.com',
+  port:   587,
+  secure: false,          // TLS via STARTTLS — works on Railway
   auth: {
-    user: process.env.GMAIL_USER,         // your Gmail address
-    pass: process.env.GMAIL_APP_PASSWORD  // App Password from Google
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_APP_PASSWORD
+  },
+  tls: {
+    rejectUnauthorized: false
   }
 });
 
