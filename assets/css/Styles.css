@@ -155,12 +155,16 @@ nav {
   color: var(--white);
   text-decoration: none;
   display: flex; align-items: center; gap: 10px;
+  min-width: 0;
+  overflow: hidden;
 }
 .nav-logo img {
   max-width: 160px;
+  min-width: 0;
   width: 100%;
   height: auto;
   display: block;
+  flex-shrink: 1;
 }
 .nav-links { display: flex; align-items: center; gap: 36px; }
 .nav-links a {
@@ -1281,9 +1285,10 @@ footer {
 
 @media (max-width: 768px) {
   section { padding: 80px 24px; }
-  nav { padding: 16px 20px; }
+  nav { padding: 16px 20px; gap: 12px; }
   .nav-links { display: none; }
-  .nav-logo img { max-width: 130px; }
+  .nav-logo img { max-width: 120px; }
+  .nav-cta { padding: 8px 14px; font-size: 0.75rem !important; white-space: nowrap; }
   #hero { padding: 100px 24px 60px; }
   .hero-stats { gap: 24px; flex-wrap: wrap; }
   .services-grid { grid-template-columns: 1fr; }
