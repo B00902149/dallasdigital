@@ -8,7 +8,7 @@
 /* ── API base URL ─────────────────────────────────────────────
    Locally:  relative URLs work fine (same origin via Node)
    Deployed: set VITE_API_URL or just hardcode your Railway URL
-   here once you have it, e.g. 'https://dallastech.up.railway.app'
+   here once you have it, e.g. 'https://dallasdigital-production.up.railway.app'
    ────────────────────────────────────────────────────────── */
 const API_BASE = window.DALLASTECH_API_URL || 'https://dallasdigital-production.up.railway.app';
 
@@ -41,9 +41,8 @@ const revealObserver = new IntersectionObserver(entries => {
 document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
 
 /* ── MOBILE NAV ───────────────────────────────────────────── */
-const hamburger   = document.getElementById('navHamburger');
-const mobileMenu  = document.getElementById('mobileMenu');
-const menuClose   = document.getElementById('mobileMenuClose');
+const hamburger  = document.getElementById('navHamburger');
+const mobileMenu = document.getElementById('mobileMenu');
 
 function openMobileMenu() {
   mobileMenu.classList.add('open');
@@ -57,8 +56,11 @@ function closeMobileMenu() {
   document.body.style.overflow = '';
 }
 
-hamburger?.addEventListener('click', openMobileMenu);
-menuClose?.addEventListener('click', closeMobileMenu);
+// Hamburger toggles open/close
+hamburger?.addEventListener('click', () => {
+  hamburger.classList.contains('open') ? closeMobileMenu() : openMobileMenu();
+});
+
 // Close on background tap
 mobileMenu?.addEventListener('click', e => {
   if (e.target === mobileMenu) closeMobileMenu();
