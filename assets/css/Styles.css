@@ -22,7 +22,7 @@
 
 /* ── RESET ── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; overflow-x: hidden; }
 * { scrollbar-width: thin; scrollbar-color: #ffffff12 transparent; }
 
 body {
@@ -150,13 +150,25 @@ nav {
 }
 .nav-logo {
   text-decoration: none;
-  display: flex; align-items: center;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   flex-shrink: 0;
 }
-.nav-logo img {
-  width: 180px;
-  height: auto;
+.nav-logo-icon {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
   display: block;
+  flex-shrink: 0;
+}
+.nav-logo-text {
+  font-family: 'Fira Code', monospace;
+  font-weight: 500;
+  font-size: 1.1rem;
+  color: var(--white);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
 }
 .nav-links { display: flex; align-items: center; gap: 36px; }
 .nav-links a {
@@ -1346,7 +1358,24 @@ footer {
   border-top: 1px solid var(--border);
   display: flex; align-items: center; justify-content: space-between;
 }
-.footer-logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; letter-spacing: 3px; color: var(--muted); }
+.footer-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.footer-logo-icon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  opacity: 0.5;
+}
+.footer-logo-text {
+  font-family: 'Fira Code', monospace;
+  font-weight: 500;
+  font-size: 0.95rem;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+}
 .footer-copy { font-size: 0.78rem; color: var(--muted); font-family: 'DM Mono', monospace; }
 .footer-links { display: flex; gap: 24px; }
 .footer-links a { font-size: 0.82rem; color: var(--muted); text-decoration: none; transition: color 0.2s; }
@@ -1367,7 +1396,8 @@ footer {
   .nav-links { display: none; }
   .nav-hamburger { display: flex; }
   .nav-logo { max-width: calc(100vw - 80px); }
-  .nav-logo img { width: 140px; max-width: 140px; height: auto; }
+  .nav-logo-icon { width: 26px; height: 26px; }
+  .nav-logo-text { font-size: 0.95rem; }
   #hero { padding: 100px 24px 60px; }
   .hero-stats { gap: 24px; flex-wrap: wrap; }
   .services-grid { grid-template-columns: 1fr; }

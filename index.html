@@ -12,9 +12,9 @@
   <link rel="manifest" href="./assets/images/my-favicon/site.webmanifest" />
 
   <!-- Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
 
-  <!-- Styles -->                                             
+  <!-- Styles -->
   <link rel="stylesheet" href="assets/css/Styles.css">
 </head>
 <body>
@@ -26,7 +26,8 @@
   <!-- ══ NAV ══════════════════════════════════════════════════ -->
   <nav>
     <a href="#hero" class="nav-logo">
-      <img src="assets/images/Logofull.png" alt="Dallas Digital Logo">
+      <img src="assets/images/Icon.png" alt="Dallas Digital Icon" class="nav-logo-icon">
+      <span class="nav-logo-text">Dallas Digital</span>
     </a>
     <div class="nav-links">
       <a href="#services">Services</a>
@@ -45,7 +46,7 @@
 
   <!-- Mobile menu overlay -->
   <div class="mobile-menu" id="mobileMenu">
-    <button class="mobile-menu-close" id="mobileMenuClose" aria-label="Close menu">✕</button>
+    <button class="mobile-menu-close" id="mobileMenuClose" aria-label="Close menu">&#10005;</button>
     <a href="#services" class="mobile-menu-link" onclick="closeMobileMenu()">Services</a>
     <a href="#projects" class="mobile-menu-link" onclick="closeMobileMenu()">Work</a>
     <a href="#about" class="mobile-menu-link" onclick="closeMobileMenu()">About</a>
@@ -117,43 +118,30 @@
     </div>
 
     <div class="services-grid reveal">
-
       <div class="service-card">
         <span class="service-icon">📱</span>
         <div class="service-title">Mobile Apps</div>
         <p class="service-desc">Cross-platform iOS &amp; Android apps built with React Native. Smooth, native-feeling experiences without the double build cost.</p>
         <div class="service-tags">
-          <span class="tag">React Native</span>
-          <span class="tag">iOS</span>
-          <span class="tag">Android</span>
-          <span class="tag">Expo</span>
+          <span class="tag">React Native</span><span class="tag">iOS</span><span class="tag">Android</span><span class="tag">Expo</span>
         </div>
       </div>
-
       <div class="service-card">
         <span class="service-icon">🌐</span>
         <div class="service-title">Web Applications</div>
         <p class="service-desc">Full-stack web apps and bespoke websites that perform. From landing pages to complex platforms — all pixel-perfect and production-ready.</p>
         <div class="service-tags">
-          <span class="tag">Next.js</span>
-          <span class="tag">React</span>
-          <span class="tag">Node.js</span>
-          <span class="tag">Supabase</span>
+          <span class="tag">Next.js</span><span class="tag">React</span><span class="tag">Node.js</span><span class="tag">Supabase</span>
         </div>
       </div>
-
       <div class="service-card">
         <span class="service-icon">🤖</span>
         <div class="service-title">AI Integration</div>
         <p class="service-desc">Embed intelligent features into any app — chatbots, coaching agents, content generation, and automation — powered by Claude API.</p>
         <div class="service-tags">
-          <span class="tag">Claude API</span>
-          <span class="tag">Chatbots</span>
-          <span class="tag">Automation</span>
-          <span class="tag">RAG</span>
+          <span class="tag">Claude API</span><span class="tag">Chatbots</span><span class="tag">Automation</span><span class="tag">RAG</span>
         </div>
       </div>
-
     </div>
   </section>
 
@@ -165,7 +153,6 @@
       <p class="section-sub">Real products. Real code. Built from scratch.</p>
     </div>
 
-    <!-- PROJECT TABS NAV -->
     <div class="proj-tab-nav reveal">
       <button class="proj-tab-btn active" data-proj="app">
         <span class="ptb-icon">📱</span>
@@ -189,107 +176,80 @@
       </button>
     </div>
 
-    <!-- PROJECT PANELS -->
     <div class="proj-panels reveal">
 
       <!-- ── APP ── -->
       <div class="proj-panel active" id="proj-app">
         <div class="proj-layout app-layout">
-
           <div class="phone-stage">
             <div class="phone-carousel">
               <button class="car-arrow car-left" aria-label="Previous">&#8592;</button>
               <div class="phone-track-wrap">
                 <div class="phone-track">
-
                   <div class="phone-frame active">
                     <div class="phone-shell">
                       <div class="phone-notch"></div>
-                      <div class="phone-screen">
-                        <img src="https://coachinghub.fit/assets/Dashboard.png" alt="Dashboard" loading="lazy" />
-                      </div>
+                      <div class="phone-screen"><img src="https://coachinghub.fit/assets/Dashboard.png" alt="Dashboard" loading="lazy" /></div>
                       <div class="phone-bar"></div>
                     </div>
                     <span class="screen-lbl">Dashboard</span>
                   </div>
-
                   <div class="phone-frame">
                     <div class="phone-shell">
                       <div class="phone-notch"></div>
-                      <div class="phone-screen">
-                        <img src="https://coachinghub.fit/assets/MyHealth.png" alt="My Health" loading="lazy" />
-                      </div>
+                      <div class="phone-screen"><img src="https://coachinghub.fit/assets/MyHealth.png" alt="My Health" loading="lazy" /></div>
                       <div class="phone-bar"></div>
                     </div>
                     <span class="screen-lbl">My Health</span>
                   </div>
-
                   <div class="phone-frame">
                     <div class="phone-shell">
                       <div class="phone-notch"></div>
-                      <div class="phone-screen">
-                        <img src="https://coachinghub.fit/assets/Exercise.png" alt="Workouts" loading="lazy" />
-                      </div>
+                      <div class="phone-screen"><img src="https://coachinghub.fit/assets/Exercise.png" alt="Workouts" loading="lazy" /></div>
                       <div class="phone-bar"></div>
                     </div>
                     <span class="screen-lbl">Workouts</span>
                   </div>
-
                   <div class="phone-frame">
                     <div class="phone-shell">
                       <div class="phone-notch"></div>
-                      <div class="phone-screen">
-                        <img src="https://coachinghub.fit/assets/Nutrition.png" alt="Nutrition" loading="lazy" />
-                      </div>
+                      <div class="phone-screen"><img src="https://coachinghub.fit/assets/Nutrition.png" alt="Nutrition" loading="lazy" /></div>
                       <div class="phone-bar"></div>
                     </div>
                     <span class="screen-lbl">Nutrition</span>
                   </div>
-
                   <div class="phone-frame">
                     <div class="phone-shell">
                       <div class="phone-notch"></div>
-                      <div class="phone-screen">
-                        <img src="https://coachinghub.fit/assets/Community.png" alt="Community" loading="lazy" />
-                      </div>
+                      <div class="phone-screen"><img src="https://coachinghub.fit/assets/Community.png" alt="Community" loading="lazy" /></div>
                       <div class="phone-bar"></div>
                     </div>
                     <span class="screen-lbl">Community</span>
                   </div>
-
                   <div class="phone-frame">
                     <div class="phone-shell">
                       <div class="phone-notch"></div>
-                      <div class="phone-screen">
-                        <img src="https://coachinghub.fit/assets/Search.png" alt="Exercise Library" loading="lazy" />
-                      </div>
+                      <div class="phone-screen"><img src="https://coachinghub.fit/assets/Search.png" alt="Exercise Library" loading="lazy" /></div>
                       <div class="phone-bar"></div>
                     </div>
                     <span class="screen-lbl">Exercise Library</span>
                   </div>
-
                   <div class="phone-frame">
                     <div class="phone-shell">
                       <div class="phone-notch"></div>
-                      <div class="phone-screen">
-                        <img src="https://coachinghub.fit/assets/Macros.png" alt="Weekly Macros" loading="lazy" />
-                      </div>
+                      <div class="phone-screen"><img src="https://coachinghub.fit/assets/Macros.png" alt="Weekly Macros" loading="lazy" /></div>
                       <div class="phone-bar"></div>
                     </div>
                     <span class="screen-lbl">Weekly Macros</span>
                   </div>
-
                   <div class="phone-frame">
                     <div class="phone-shell">
                       <div class="phone-notch"></div>
-                      <div class="phone-screen">
-                        <img src="https://coachinghub.fit/assets/Profile.png" alt="Profile" loading="lazy" />
-                      </div>
+                      <div class="phone-screen"><img src="https://coachinghub.fit/assets/Profile.png" alt="Profile" loading="lazy" /></div>
                       <div class="phone-bar"></div>
                     </div>
                     <span class="screen-lbl">Profile</span>
                   </div>
-
                 </div>
               </div>
               <button class="car-arrow car-right" aria-label="Next">&#8594;</button>
@@ -310,7 +270,6 @@
             <div class="proj-type-tag">🏆 Final Year Project</div>
             <h3 class="proj-name">CoachingHub</h3>
             <p class="proj-desc">A cross-platform fitness app that ends "app fatigue" — unifying workout tracking, nutrition logging, real-time health metrics, and a community newsfeed into one dashboard. Integrates with Apple Health, Google Fit, and the USDA food database.</p>
-
             <div class="proj-features">
               <div class="proj-feat"><span>📊</span> Unified health dashboard</div>
               <div class="proj-feat"><span>🏋️</span> 800+ exercise database</div>
@@ -319,43 +278,29 @@
               <div class="proj-feat"><span>🔗</span> 6+ API integrations</div>
               <div class="proj-feat"><span>🔐</span> JWT + Firebase auth</div>
             </div>
-
             <div class="proj-stack">
-              <span class="tag">React Native</span>
-              <span class="tag">Expo</span>
-              <span class="tag">Node.js</span>
-              <span class="tag">MongoDB</span>
-              <span class="tag">Redux</span>
-              <span class="tag">Firebase</span>
-              <span class="tag">REST API</span>
-              <span class="tag">JWT Auth</span>
+              <span class="tag">React Native</span><span class="tag">Expo</span><span class="tag">Node.js</span>
+              <span class="tag">MongoDB</span><span class="tag">Redux</span><span class="tag">Firebase</span>
+              <span class="tag">REST API</span><span class="tag">JWT Auth</span>
             </div>
-
             <div class="proj-actions">
               <a href="https://coachinghub.fit/" target="_blank" rel="noopener" class="btn-primary">View Website →</a>
               <a href="https://github.com/B00902149/CHApp" target="_blank" rel="noopener" class="btn-ghost">GitHub</a>
             </div>
           </div>
-
         </div>
       </div>
 
       <!-- ── COACHINGHUB WEB ── -->
       <div class="proj-panel" id="proj-coachinghub">
         <div class="proj-layout web-layout">
-
           <div class="browser-stage">
             <div class="browser-chrome">
               <div class="browser-bar">
                 <div class="browser-dots">
-                  <span class="bdot bdot-r"></span>
-                  <span class="bdot bdot-y"></span>
-                  <span class="bdot bdot-g"></span>
+                  <span class="bdot bdot-r"></span><span class="bdot bdot-y"></span><span class="bdot bdot-g"></span>
                 </div>
-                <div class="browser-url">
-                  <span class="url-lock">🔒</span>
-                  <span>coachinghub.fit</span>
-                </div>
+                <div class="browser-url"><span class="url-lock">🔒</span><span>coachinghub.fit</span></div>
                 <a href="https://coachinghub.fit/" target="_blank" rel="noopener" class="browser-ext" title="Open live site">↗</a>
               </div>
               <div class="browser-view screenshot-view">
@@ -365,50 +310,36 @@
               </div>
             </div>
           </div>
-
           <div class="proj-info">
             <div class="proj-type-tag">🌐 Marketing Site</div>
             <h3 class="proj-name">CoachingHub Website</h3>
             <p class="proj-desc">Waitlist and marketing landing page for the CoachingHub app. Conversion-focused design with feature showcases, app screenshots, and beta signup — built to turn visitors into early testers.</p>
-
             <div class="proj-features">
               <div class="proj-feat"><span>🎯</span> Conversion-focused layout</div>
               <div class="proj-feat"><span>📱</span> App screenshot showcase</div>
               <div class="proj-feat"><span>📋</span> Waitlist signup</div>
               <div class="proj-feat"><span>⚡</span> Fully responsive</div>
             </div>
-
             <div class="proj-stack">
-              <span class="tag">HTML</span>
-              <span class="tag">CSS</span>
-              <span class="tag">JavaScript</span>
-              <span class="tag">Responsive</span>
+              <span class="tag">HTML</span><span class="tag">CSS</span><span class="tag">JavaScript</span><span class="tag">Responsive</span>
             </div>
-
             <div class="proj-actions">
               <a href="https://coachinghub.fit/" target="_blank" rel="noopener" class="btn-primary">View Live →</a>
             </div>
           </div>
-
         </div>
       </div>
 
       <!-- ── FFF ── -->
       <div class="proj-panel" id="proj-fff">
         <div class="proj-layout web-layout">
-
           <div class="browser-stage">
             <div class="browser-chrome">
               <div class="browser-bar">
                 <div class="browser-dots">
-                  <span class="bdot bdot-r"></span>
-                  <span class="bdot bdot-y"></span>
-                  <span class="bdot bdot-g"></span>
+                  <span class="bdot bdot-r"></span><span class="bdot bdot-y"></span><span class="bdot bdot-g"></span>
                 </div>
-                <div class="browser-url">
-                  <span class="url-lock">🔒</span>
-                  <span>b00902149.github.io/FFFweb</span>
-                </div>
+                <div class="browser-url"><span class="url-lock">🔒</span><span>b00902149.github.io/FFFweb</span></div>
                 <a href="https://b00902149.github.io/FFFweb/" target="_blank" rel="noopener" class="browser-ext" title="Open live site">↗</a>
               </div>
               <div class="browser-view screenshot-view">
@@ -418,51 +349,37 @@
               </div>
             </div>
           </div>
-
           <div class="proj-info">
             <div class="proj-type-tag">✝️ App · Marketing</div>
             <h3 class="proj-name">FFF — Faith. Fitness. Fuel.</h3>
             <p class="proj-desc">Marketing site for a faith-based fitness app built in React Native. Bold dark editorial design with animated ticker, scroll-reveal sections, and interactive app previews. Demonstrates all three pillars: Faith, Fitness, and Nutrition.</p>
-
             <div class="proj-features">
               <div class="proj-feat"><span>🎨</span> Bold dark editorial design</div>
               <div class="proj-feat"><span>✨</span> Scroll-reveal animations</div>
               <div class="proj-feat"><span>📱</span> Interactive app preview</div>
               <div class="proj-feat"><span>📋</span> Waitlist CTA + FAQ</div>
             </div>
-
             <div class="proj-stack">
-              <span class="tag">HTML</span>
-              <span class="tag">CSS</span>
-              <span class="tag">JavaScript</span>
-              <span class="tag">React Native</span>
-              <span class="tag">Claude API</span>
+              <span class="tag">HTML</span><span class="tag">CSS</span><span class="tag">JavaScript</span>
+              <span class="tag">React Native</span><span class="tag">Claude API</span>
             </div>
-
             <div class="proj-actions">
               <a href="https://b00902149.github.io/FFFweb/" target="_blank" rel="noopener" class="btn-primary">View Live →</a>
             </div>
           </div>
-
         </div>
       </div>
 
       <!-- ── PORTFOLIO ── -->
       <div class="proj-panel" id="proj-portfolio">
         <div class="proj-layout web-layout">
-
           <div class="browser-stage">
             <div class="browser-chrome">
               <div class="browser-bar">
                 <div class="browser-dots">
-                  <span class="bdot bdot-r"></span>
-                  <span class="bdot bdot-y"></span>
-                  <span class="bdot bdot-g"></span>
+                  <span class="bdot bdot-r"></span><span class="bdot bdot-y"></span><span class="bdot bdot-g"></span>
                 </div>
-                <div class="browser-url">
-                  <span class="url-lock">🔒</span>
-                  <span>b00902149.github.io/portfolio</span>
-                </div>
+                <div class="browser-url"><span class="url-lock">🔒</span><span>b00902149.github.io/portfolio</span></div>
                 <a href="https://b00902149.github.io/portfolio/" target="_blank" rel="noopener" class="browser-ext" title="Open live site">↗</a>
               </div>
               <div class="browser-view screenshot-view">
@@ -472,31 +389,23 @@
               </div>
             </div>
           </div>
-
           <div class="proj-info">
             <div class="proj-type-tag">💼 Developer Portfolio</div>
             <h3 class="proj-name">Developer Portfolio</h3>
             <p class="proj-desc">Personal portfolio showcasing full-stack and mobile projects, technical skills, and academic work. Features interactive project cards, skills matrix, and a contact form — all in a clean dark single-page layout.</p>
-
             <div class="proj-features">
               <div class="proj-feat"><span>🗂️</span> Full project showcase</div>
               <div class="proj-feat"><span>🛠️</span> Skills matrix</div>
               <div class="proj-feat"><span>📬</span> Contact form</div>
               <div class="proj-feat"><span>🎨</span> Scroll-reveal animations</div>
             </div>
-
             <div class="proj-stack">
-              <span class="tag">HTML</span>
-              <span class="tag">CSS</span>
-              <span class="tag">JavaScript</span>
-              <span class="tag">GitHub Pages</span>
+              <span class="tag">HTML</span><span class="tag">CSS</span><span class="tag">JavaScript</span><span class="tag">GitHub Pages</span>
             </div>
-
             <div class="proj-actions">
               <a href="https://b00902149.github.io/portfolio/" target="_blank" rel="noopener" class="btn-primary">View Live →</a>
             </div>
           </div>
-
         </div>
       </div>
 
@@ -505,7 +414,6 @@
 
   <!-- ══ ABOUT ══════════════════════════════════════════════════ -->
   <section id="about">
-
     <div class="about-visual reveal">
       <div class="about-card">
         <div class="about-avatar">👨‍💻</div>
@@ -529,7 +437,6 @@
         <div class="fb-lbl">Specialist</div>
       </div>
     </div>
-
     <div class="about-text reveal">
       <div class="section-tag">// About Me</div>
       <h2>DEVELOPER.<br>BUILDER.<br><span style="color:var(--purple-bright)">PROBLEM SOLVER.</span></h2>
@@ -540,7 +447,6 @@
         <a href="#contact" class="btn-primary">Work With Me</a>
       </div>
     </div>
-
   </section>
 
   <!-- ══ AI DEMO SECTION ═══════════════════════════════════════ -->
@@ -552,34 +458,14 @@
     </div>
 
     <div class="ai-demo-wrap reveal">
-
-      <!-- Business type picker -->
       <div class="biz-picker">
-        <button class="biz-btn active" data-biz="restaurant">
-          <span class="biz-ico">🍽️</span>
-          <span class="biz-name">Restaurant</span>
-        </button>
-        <button class="biz-btn" data-biz="gym">
-          <span class="biz-ico">🏋️</span>
-          <span class="biz-name">Gym</span>
-        </button>
-        <button class="biz-btn" data-biz="ecom">
-          <span class="biz-ico">🛍️</span>
-          <span class="biz-name">E-commerce</span>
-        </button>
-        <button class="biz-btn" data-biz="salon">
-          <span class="biz-ico">✂️</span>
-          <span class="biz-name">Salon</span>
-        </button>
-        <button class="biz-btn" data-biz="coach">
-          <span class="biz-ico">📈</span>
-          <span class="biz-name">Coaching</span>
-        </button>
+        <button class="biz-btn active" data-biz="restaurant"><span class="biz-ico">🍽️</span><span class="biz-name">Restaurant</span></button>
+        <button class="biz-btn" data-biz="gym"><span class="biz-ico">🏋️</span><span class="biz-name">Gym</span></button>
+        <button class="biz-btn" data-biz="ecom"><span class="biz-ico">🛍️</span><span class="biz-name">E-commerce</span></button>
+        <button class="biz-btn" data-biz="salon"><span class="biz-ico">✂️</span><span class="biz-name">Salon</span></button>
+        <button class="biz-btn" data-biz="coach"><span class="biz-ico">📈</span><span class="biz-name">Coaching</span></button>
       </div>
-
-      <!-- Chat window -->
       <div class="demo-chat">
-        <!-- Chat header -->
         <div class="demo-chat-header">
           <div class="demo-chat-av" id="demoAv">🍽️</div>
           <div class="demo-chat-meta">
@@ -590,28 +476,19 @@
           </div>
           <div class="demo-chat-badge" id="demoBadge">Italian Restaurant</div>
         </div>
-
-        <!-- Messages -->
         <div class="demo-messages" id="demoMessages"></div>
-
-        <!-- Suggestion chips -->
         <div class="demo-suggestions" id="demoSuggestions"></div>
-
-        <!-- Input -->
         <div class="demo-input-row">
           <input type="text" id="demoInput" placeholder="Ask anything..." autocomplete="off" />
           <button class="demo-send" id="demoSend">➤</button>
         </div>
       </div>
-
     </div>
 
-    <!-- CTA below demo -->
     <div class="ai-demo-cta reveal">
       <p>Every project I build can include a live AI assistant like this one — trained on your business, embedded in your site, and talking to your customers 24/7.</p>
       <a href="#contact" class="btn-primary">Get a Quote →</a>
     </div>
-
   </section>
 
   <!-- ══ CONTACT ════════════════════════════════════════════════ -->
@@ -622,40 +499,25 @@
     </div>
 
     <div class="contact-grid">
-
       <div class="contact-info reveal">
         <h3>START YOUR PROJECT</h3>
         <p>Whether you've got a fully formed brief or just a rough idea — I want to hear it. Fill out the form and I'll come back to you within 24 hours with a no-obligation quote.</p>
-
         <div class="contact-item">
           <div class="contact-item-icon">📍</div>
-          <div>
-            <div class="contact-item-text">Location</div>
-            <div class="contact-item-val">United Kingdom</div>
-          </div>
+          <div><div class="contact-item-text">Location</div><div class="contact-item-val">United Kingdom</div></div>
         </div>
         <div class="contact-item">
           <div class="contact-item-icon">⚡</div>
-          <div>
-            <div class="contact-item-text">Response Time</div>
-            <div class="contact-item-val">Within 24 hours</div>
-          </div>
+          <div><div class="contact-item-text">Response Time</div><div class="contact-item-val">Within 24 hours</div></div>
         </div>
         <div class="contact-item">
           <div class="contact-item-icon">💜</div>
-          <div>
-            <div class="contact-item-text">Approach</div>
-            <div class="contact-item-val">Collaborative &amp; transparent</div>
-          </div>
+          <div><div class="contact-item-text">Approach</div><div class="contact-item-val">Collaborative &amp; transparent</div></div>
         </div>
         <div class="contact-item">
           <div class="contact-item-icon">🤖</div>
-          <div>
-            <div class="contact-item-text">Speciality</div>
-            <div class="contact-item-val">AI integration on any project</div>
-          </div>
+          <div><div class="contact-item-text">Speciality</div><div class="contact-item-val">AI integration on any project</div></div>
         </div>
-
         <div style="margin-top:32px;padding:24px;background:var(--purple-soft);border:1px solid #7c3aed30;border-radius:16px;">
           <div style="font-family:'DM Mono',monospace;font-size:0.68rem;color:var(--purple-bright);letter-spacing:2px;margin-bottom:10px;">FREE WITH EVERY PROJECT</div>
           <p style="font-size:0.85rem;color:var(--muted2);line-height:1.7;font-weight:300;">AI integration consultation — I'll identify where AI can add real value to your product, at no extra charge on any project over £2,000.</p>
@@ -665,8 +527,6 @@
       <div class="contact-form reveal" id="contact-form-wrap">
         <h3>FREE QUOTE REQUEST</h3>
         <div id="form-content">
-
-          <!-- Section: You -->
           <div class="form-section-label">ABOUT YOU</div>
           <div class="form-row">
             <div class="form-group">
@@ -678,7 +538,6 @@
               <input type="email" id="f-email" placeholder="you@example.com">
             </div>
           </div>
-
           <div class="form-row">
             <div class="form-group">
               <label>BUSINESS / PROJECT NAME</label>
@@ -705,7 +564,6 @@
             </div>
           </div>
 
-          <!-- Section: Project -->
           <div class="form-section-label">YOUR PROJECT</div>
           <div class="form-group">
             <label>PROJECT TYPE</label>
@@ -719,7 +577,6 @@
               <option>Other / Not Sure</option>
             </select>
           </div>
-
           <div class="form-group">
             <label>PLATFORM <span class="form-label-hint">— select all that apply</span></label>
             <div class="form-checkboxes">
@@ -730,7 +587,6 @@
               <label class="form-checkbox"><input type="checkbox" id="f-plat-notsure" value="Not sure yet"> Not sure yet</label>
             </div>
           </div>
-
           <div class="form-row">
             <div class="form-group">
               <label>BUDGET RANGE</label>
@@ -757,7 +613,6 @@
             </div>
           </div>
 
-          <!-- Section: Brand & existing presence -->
           <div class="form-section-label">EXISTING PRESENCE <span class="form-label-hint">— optional but helpful</span></div>
           <div class="form-row">
             <div class="form-group">
@@ -769,7 +624,6 @@
               <input type="text" id="f-socials" placeholder="@handle or platform links">
             </div>
           </div>
-
           <div class="form-group">
             <label>DO YOU HAVE EXISTING BRANDING?</label>
             <select id="f-branding">
@@ -781,7 +635,6 @@
             </select>
           </div>
 
-          <!-- Section: Description -->
           <div class="form-section-label">THE BRIEF</div>
           <div class="form-group">
             <label>TELL ME ABOUT YOUR PROJECT</label>
@@ -796,13 +649,15 @@
           <p>Thanks! I'll review your brief and get back to you within 24 hours with a tailored quote.</p>
         </div>
       </div>
-
     </div>
   </section>
 
   <!-- ══ FOOTER ════════════════════════════════════════════════ -->
   <footer>
-    <img src="assets/images/Logofull.png" alt="Dallas Digital Logo">
+    <div class="footer-logo">
+      <img src="assets/images/Icon.png" alt="Dallas Digital Icon" class="footer-logo-icon">
+      <span class="footer-logo-text">Dallas Digital</span>
+    </div>
     <div class="footer-links">
       <a href="#services">Services</a>
       <a href="#projects">Work</a>
