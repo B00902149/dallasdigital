@@ -147,6 +147,7 @@ nav {
   padding: 20px 60px;
   display: flex; align-items: center; justify-content: space-between;
   background: linear-gradient(to bottom, var(--bg) 60%, transparent);
+  overflow: hidden;
 }
 .nav-logo {
   font-family: 'Bebas Neue', sans-serif;
@@ -156,12 +157,11 @@ nav {
   text-decoration: none;
   display: flex; align-items: center; gap: 10px;
   min-width: 0;
-  overflow: hidden;
+  flex-shrink: 1;
 }
 .nav-logo img {
+  width: 160px;
   max-width: 160px;
-  min-width: 0;
-  width: 100%;
   height: auto;
   display: block;
   flex-shrink: 1;
@@ -1285,10 +1285,10 @@ footer {
 
 @media (max-width: 768px) {
   section { padding: 80px 24px; }
-  nav { padding: 16px 20px; gap: 12px; }
+  nav { padding: 16px 20px; gap: 12px; overflow: hidden; }
   .nav-links { display: none; }
-  .nav-logo img { max-width: 100px; }
-  .nav-cta { padding: 8px 14px; font-size: 0.75rem !important; white-space: nowrap; }
+  .nav-logo img { width: 120px; max-width: 120px; }
+  .nav-cta { padding: 8px 14px; font-size: 0.75rem !important; white-space: nowrap; flex-shrink: 0; }
   #hero { padding: 100px 24px 60px; }
   .hero-stats { gap: 24px; flex-wrap: wrap; }
   .services-grid { grid-template-columns: 1fr; }
@@ -1303,6 +1303,6 @@ footer {
 }
 
 @media (max-width: 400px) {
-  .nav-logo img { max-width: 80px; }
+  .nav-logo img { width: 90px; max-width: 90px; }
   .nav-cta { display: none; }
 }
