@@ -5,6 +5,13 @@
 
 'use strict';
 
+/* ── API base URL ─────────────────────────────────────────────
+   Locally:  relative URLs work fine (same origin via Node)
+   Deployed: set VITE_API_URL or just hardcode your Railway URL
+   here once you have it, e.g. 'https://dallastech.up.railway.app'
+   ────────────────────────────────────────────────────────── */
+const API_BASE = window.DALLASTECH_API_URL || '';
+
 /* ── CUSTOM CURSOR ────────────────────────────────────────── */
 const cur  = document.getElementById('cursor');
 const ring = document.getElementById('cursor-ring');
@@ -257,7 +264,7 @@ async function demoFetchSuggestions(conversationSoFar) {
   const lastExchange = conversationSoFar.slice(-4);
 
   try {
-    const res = await fetch('/api/claude', {
+    const res = await fetch(`${API_BASE}/api/claude`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -299,7 +306,7 @@ async function demoSendMsg() {
   try {
     // Main reply + follow-up suggestions fetched in parallel
     const [replyRes, suggestions] = await Promise.all([
-      fetch('/api/claude', {
+      fetch(`${API_BASE}/api/claude`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -421,7 +428,7 @@ async function submitForm() {
 
   try {
     // ── Always: send to server for AI quote generation ────────
-    const quoteRes = await fetch('/api/quote-request', {
+    const quoteRes = await fetch(`${API_BASE}/api/quote-request`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify(payload)

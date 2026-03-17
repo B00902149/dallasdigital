@@ -1,10 +1,9 @@
-# Environment — NEVER commit your API key
+# Dependencies
+node_modules/
+
+# Environment variables — never commit these
 .env
 
-# Node
-node_modules/
-npm-debug.log*
-
-# OS
+# OS files
 .DS_Store
 Thumbs.db

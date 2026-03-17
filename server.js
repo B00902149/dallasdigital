@@ -232,7 +232,10 @@ Use **bold** for section headings. Reference their business name and industry wh
 
     // ── 2. Create single-use approval token ──────────────────
     const token      = crypto.randomBytes(32).toString('hex');
-    const approveUrl = `http://localhost:${PORT}/api/approve/${token}`;
+    const baseUrl    = process.env.RAILWAY_PUBLIC_DOMAIN
+                         ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
+                         : `http://localhost:${PORT}`;
+    const approveUrl = `${baseUrl}/api/approve/${token}`;
 
     pendingQuotes.set(token, {
       quoteText,
