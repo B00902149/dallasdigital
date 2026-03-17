@@ -8,7 +8,7 @@
 /* ── API base URL ─────────────────────────────────────────────
    Locally:  relative URLs work fine (same origin via Node)
    Deployed: set VITE_API_URL or just hardcode your Railway URL
-   here once you have it, e.g. 'https://dallasdigital-production.up.railway.app'
+   here once you have it, e.g. 'https://dallastech.up.railway.app'
    ────────────────────────────────────────────────────────── */
 const API_BASE = window.DALLASTECH_API_URL || 'https://dallasdigital-production.up.railway.app';
 
@@ -43,21 +43,24 @@ document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
 /* ── MOBILE NAV ───────────────────────────────────────────── */
 const hamburger  = document.getElementById('navHamburger');
 const mobileMenu = document.getElementById('mobileMenu');
+const navEl      = document.querySelector('nav');
 
 function openMobileMenu() {
   mobileMenu.classList.add('open');
   hamburger.classList.add('open');
+  navEl.classList.add('menu-open');
   document.body.style.overflow = 'hidden';
 }
 
 function closeMobileMenu() {
   mobileMenu.classList.remove('open');
   hamburger.classList.remove('open');
+  navEl.classList.remove('menu-open');
   document.body.style.overflow = '';
 }
 
-// Hamburger toggles open/close
-hamburger?.addEventListener('click', () => {
+hamburger?.addEventListener('click', (e) => {
+  e.stopPropagation();
   hamburger.classList.contains('open') ? closeMobileMenu() : openMobileMenu();
 });
 

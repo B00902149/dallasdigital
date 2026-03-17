@@ -147,7 +147,9 @@ nav {
   padding: 16px 60px;
   display: flex; align-items: center; justify-content: space-between;
   background: linear-gradient(to bottom, var(--bg) 60%, transparent);
+  pointer-events: none;
 }
+nav > * { pointer-events: auto; }
 .nav-logo {
   text-decoration: none;
   display: flex;
@@ -190,7 +192,9 @@ nav {
   transition: all 0.2s !important;
   box-shadow: 0 0 20px var(--purple-glow);
 }
-.nav-cta:hover { background: var(--purple-bright) !important; transform: translateY(-1px); box-shadow: 0 4px 30px var(--purple-glow) !important; }
+nav.menu-open {
+  background: var(--bg);
+}
 
 /* ── Hamburger button ── */
 .nav-hamburger {
