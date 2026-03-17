@@ -1287,7 +1287,7 @@ footer {
   section { padding: 80px 24px; }
   nav { padding: 16px 20px; gap: 12px; }
   .nav-links { display: none; }
-  .nav-logo img { max-width: 120px; }
+  .nav-logo img { max-width: 100px; }
   .nav-cta { padding: 8px 14px; font-size: 0.75rem !important; white-space: nowrap; }
   #hero { padding: 100px 24px 60px; }
   .hero-stats { gap: 24px; flex-wrap: wrap; }
@@ -1300,4 +1300,9 @@ footer {
   .ptb-icon { display: none; }
   .browser-view { height: 320px; }
   .proj-features { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 400px) {
+  .nav-logo img { max-width: 80px; }
+  .nav-cta { display: none; }
 }
