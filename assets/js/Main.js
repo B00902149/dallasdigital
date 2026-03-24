@@ -474,9 +474,9 @@ async function submitForm() {
         await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
           to_email:     email,
           to_name:      name,
-          subject:      'We received your quote request — DallasTech',
+          subject:      'We received your quote request — Dallas Digital',
           html_body:    buildConfirmationEmail(name, type),
-          from_name:    'Adrian Dallas — DallasTech',
+          from_name:    'Adrian Dallas — Dallas Digital',
           project_type: type,
           budget:       budget   || 'Not specified',
           timeline:     timeline || 'Not specified',
