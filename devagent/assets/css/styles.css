@@ -172,6 +172,8 @@ body {
 .sitem { padding: 10px 12px; border: 0.5px solid rgba(255,255,255,0.08); border-radius: 8px; }
 .skey  { font-size: 11px; color: rgba(255,255,255,0.35); margin-bottom: 4px; }
 .sval  { font-size: 13px; font-weight: 500; }
+.smeta { font-size: 11px; color: rgba(255,255,255,0.32); margin-top: 6px; line-height: 1.6; }
+.stext-list { font-weight: 400; font-size: 12px; line-height: 1.8; }
 
 .type-select {
   margin-top: 4px;

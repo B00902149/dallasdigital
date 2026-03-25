@@ -85,6 +85,10 @@ async function parseEmail() {
       [{ role: 'user', content: 'Parse this proposal email:\n\n' + emailText }],
       'You are a project scoping assistant for DallasTech, a UK freelance web dev studio. '
       + 'Extract all available information from this proposal email. '
+      + 'These emails may be proposal documents, not simple enquiries, so infer fields from headings and body content when needed. '
+      + 'If the email is addressed to the client, use the recipient name as clientName and the venture/company name as businessName. '
+      + 'Do not use generic phrases, bullet text, testimonials, or feature labels as names. '
+      + 'Prefer explicit values from sections like Introduction, Understanding Your Project, Feature Breakdown, Tech Stack, Timeline Breakdown, Investment, and Existing Presence. '
       + 'Return ONLY valid JSON (no markdown, no extra text) with these exact fields '
       + '(use empty string "" if not found):\n'
       + '{\n'
@@ -109,18 +113,9 @@ async function parseEmail() {
     );
 
     var parsed = JSON.parse(raw.replace(/```json|```/g, '').trim());
+    var normalized = normalizeParsedProposal(parsed, emailText);
 
-    scope = {
-      clientName: parsed.clientName || extractName(emailText),
-      clientEmail: parsed.clientEmail || extractEmail(emailText),
-      businessName: parsed.businessName || '',
-      projectType: parsed.projectType || 'Bespoke Website',
-      industry: parsed.industry || 'generic',
-      stack: parsed.stack || ['HTML', 'CSS', 'JS'],
-      features: parsed.features || ['Responsive design', 'Contact form', 'SEO'],
-      timeline: parsed.timeline || 'TBC',
-      budget: parsed.budget || 'TBC'
-    };
+    scope = normalized.scope;
 
     sel.fromName = scope.clientName;
     sel.fromEmail = scope.clientEmail;
@@ -128,15 +123,15 @@ async function parseEmail() {
 
     var accent = industryAccent(scope.industry);
     fillBrandFields({
-      tagline: parsed.tagline || '',
-      about: parsed.about || '',
-      phone: parsed.phone || '',
+      tagline: normalized.brand.tagline,
+      about: normalized.brand.about,
+      phone: normalized.brand.phone,
       email: scope.clientEmail,
-      instagram: parsed.instagram || '',
-      facebook: parsed.facebook || '',
-      tiktok: parsed.tiktok || '',
-      logo: parsed.logo || '',
-      hero: parsed.hero || scope.industry
+      instagram: normalized.brand.instagram,
+      facebook: normalized.brand.facebook,
+      tiktok: normalized.brand.tiktok,
+      logo: normalized.brand.logo,
+      hero: normalized.brand.hero
     });
     document.getElementById('brandColour').value = accent;
     updateSwatch(accent);
@@ -163,17 +158,22 @@ async function parseEmail() {
 function renderScopeSummary(s) {
   var el = document.getElementById('scopeSummary');
   if (!el) return;
+  var stack = (s.stack || []).join(', ');
+  var features = (s.features || []).map(function(f) { return '&#8226; ' + esc(f); }).join('<br>');
+  var timeline = esc(s.timeline || 'TBC');
+  var timelineCompact = esc(compactTimeline(s.timeline || 'TBC'));
   el.style.display = 'grid';
   el.innerHTML =
       '<div class="sitem"><div class="skey">Client</div><div class="sval">' + esc(s.clientName || '-') + '</div></div>'
     + '<div class="sitem"><div class="skey">Business</div><div class="sval">' + esc(s.businessName || s.clientName || '-') + '</div></div>'
     + '<div class="sitem"><div class="skey">Project type</div><div class="sval">' + esc(s.projectType || '-') + '</div></div>'
     + '<div class="sitem"><div class="skey">Industry</div><div class="sval">' + esc(s.industry || '-') + '</div></div>'
-    + '<div class="sitem"><div class="skey">Stack</div><div class="sval">' + esc((s.stack || []).join(', ')) + '</div></div>'
-    + '<div class="sitem"><div class="skey">Timeline</div><div class="sval">' + esc(s.timeline || 'TBC') + '</div></div>'
+    + '<div class="sitem"><div class="skey">Budget</div><div class="sval">' + esc(s.budget || 'TBC') + '</div></div>'
+    + '<div class="sitem"><div class="skey">Timeline</div><div class="sval">' + timelineCompact + '</div><div class="smeta">' + timeline + '</div></div>'
+    + '<div class="sitem" style="grid-column:1/-1"><div class="skey">Stack</div><div class="sval">' + esc(stack || 'TBC') + '</div></div>'
     + '<div class="sitem" style="grid-column:1/-1"><div class="skey">Features</div>'
-    +   '<div class="sval" style="font-weight:400;font-size:12px;line-height:1.8">'
-    +   (s.features || []).map(function(f) { return '&#8226; ' + esc(f); }).join('<br>') + '</div></div>'
+    +   '<div class="sval stext-list">'
+    +   features + '</div></div>'
     + '<div class="sitem" style="grid-column:1/-1"><div class="skey">Override project type</div>'
     +   '<select id="typeOverride" class="type-select">'
     +     '<option value="Bespoke Website"' + (s.projectType === 'Bespoke Website' ? ' selected' : '') + '>Bespoke Website (HTML/CSS/JS)</option>'
@@ -183,14 +183,53 @@ function renderScopeSummary(s) {
     +   '</select></div>';
 }
 
+function compactTimeline(value) {
+  var text = cleanValue(value);
+  if (!text) return 'TBC';
+  var firstChunk = text.split('|')[0].trim();
+  if (firstChunk.length <= 48) return firstChunk;
+  var shortMatch = text.match(/\b\d+[- ]?(?:day|week|month)s?\b/i);
+  if (shortMatch) return cleanValue(shortMatch[0]);
+  return text.slice(0, 45) + '...';
+}
+
 function extractEmail(text) {
   var m = text.match(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/);
   return m ? m[0] : '';
 }
 
+function cleanValue(value) {
+  return String(value || '').replace(/\s+/g, ' ').replace(/^[\s,.:;-]+|[\s,.:;-]+$/g, '').trim();
+}
+
+function titleCaseWords(value) {
+  return cleanValue(value).split(/\s+/).map(function(part) {
+    return part ? part.charAt(0).toUpperCase() + part.slice(1) : '';
+  }).join(' ');
+}
+
+function isSuspiciousName(value) {
+  var v = cleanValue(value).toLowerCase();
+  if (!v) return true;
+  if (v.length < 3) return true;
+  if (/(^feature breakdown$|^existing presence$|^understanding your project$|^satisfied clients$|^responsive design$|^contact form$|^seo$|^client$|^business$)/.test(v)) return true;
+  if (/(testimonial|deliverable|feature|service|timeline|investment|support|results page|book page|call-to-action|sales funnel)/.test(v)) return true;
+  return false;
+}
+
+function extractGreetingName(text) {
+  var m = text.match(/\b(?:dear|hi|hello)\s+([A-Z][a-z]+(?: [A-Z][a-z]+){0,2})\b/);
+  return m ? cleanValue(m[1]) : '';
+}
+
 function extractName(text) {
-  var m = text.match(/(?:from|regards|cheers|thanks)[,:\s]+([A-Z][a-z]+(?: [A-Z][a-z]+)+)/i);
-  return m ? m[1] : 'Client';
+  var greeting = extractGreetingName(text);
+  if (greeting && !isSuspiciousName(greeting)) return greeting;
+
+  var fromMatch = text.match(/(?:from|regards|cheers|thanks|best regards|kind regards|best)[,:\s]+([A-Z][a-z]+(?: [A-Z][a-z]+){0,2})/i);
+  if (fromMatch && !isSuspiciousName(fromMatch[1])) return cleanValue(fromMatch[1]);
+
+  return 'Client';
 }
 
 function industryAccent(industry) {
@@ -204,25 +243,192 @@ function industryAccent(industry) {
   return map[industry] || '#534AB7';
 }
 
-function localGuessScope(text) {
-  var t = text.toLowerCase();
-  var industry = 'generic';
-  if (t.match(/restaurant|cafe|menu|dining/)) industry = 'restaurant';
-  if (t.match(/fitness|gym|personal train/)) industry = 'fitness';
-  if (t.match(/law|legal|solicitor/)) industry = 'legal';
-  if (t.match(/floral|florist|flower/)) industry = 'florist';
-  if (t.match(/embroid|gift|personalised/)) industry = 'gifts';
-  return {
-    clientName: extractName(text),
-    clientEmail: extractEmail(text),
-    businessName: '',
-    projectType: 'Bespoke Website',
-    industry: industry,
-    stack: ['HTML', 'CSS', 'JS'],
-    features: ['Responsive design', 'Contact form', 'SEO'],
-    timeline: 'TBC',
-    budget: 'TBC'
+function normalizeIndustry(value, text) {
+  var source = cleanValue(value).toLowerCase() + ' ' + String(text || '').toLowerCase();
+  if (/(fitness|health & fitness|health and fitness|personal training|coach|coaching|gym|wellness)/.test(source)) return 'fitness';
+  if (/(restaurant|cafe|menu|dining|food)/.test(source)) return 'restaurant';
+  if (/(law|legal|solicitor|attorney)/.test(source)) return 'legal';
+  if (/(floral|florist|flower|bouquet)/.test(source)) return 'florist';
+  if (/(gift|gifts|embroid|personalised|shop)/.test(source)) return 'gifts';
+  return 'generic';
+}
+
+function normalizeProjectType(value, text) {
+  var source = cleanValue(value).toLowerCase() + ' ' + String(text || '').toLowerCase();
+  if (/(react native|ios|android|mobile app|app store|play store)/.test(source) && /(website|web app|backend|node|api)/.test(source)) return 'Full-Stack';
+  if (/(react native|ios|android|mobile app|app store|play store)/.test(source)) return 'React Native App';
+  if (/(backend|api|node\/express|express|server-side)/.test(source) && !/(website|front-end|frontend|landing page)/.test(source)) return 'Node/Express Backend';
+  if (/(full-stack|full stack|web and backend)/.test(source)) return 'Full-Stack';
+  return 'Bespoke Website';
+}
+
+function extractSection(text, heading) {
+  var escaped = heading.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  var re = new RegExp(escaped + "\\s*\\n([\\s\\S]*?)(?=\\n[A-Z][A-Za-z&'\\- ]{2,}\\n|$)", 'i');
+  var m = text.match(re);
+  return m ? cleanValue(m[1]) : '';
+}
+
+function extractBusinessName(text) {
+  var patterns = [
+    /project quote for\s+([^,\n]+?)(?:,\s+your|\.)/i,
+    /proposal (?:for|to)\s+([^,\n]+?)(?:,\s+your|\.)/i,
+    /business\/project:\s*([^\n]+)/i,
+    /for\s+([A-Z][A-Za-z0-9&' -]{2,})\s*,\s*your\s+[A-Z][A-Za-z&' -]+ venture/i
+  ];
+  for (var i = 0; i < patterns.length; i++) {
+    var m = text.match(patterns[i]);
+    if (m) {
+      var candidate = cleanValue(m[1]);
+      if (!isSuspiciousName(candidate)) return candidate;
+    }
+  }
+  return '';
+}
+
+function extractTimeline(text) {
+  var section = extractSection(text, 'Timeline Breakdown');
+  var monthMatch = text.match(/\b(\d+[- ]?(?:month|week)s?)\b/i);
+  if (monthMatch) return cleanValue(monthMatch[1]);
+  if (section) {
+    var bullets = extractBulletList(section);
+    if (bullets.length) return bullets.join(' | ');
+    return section;
+  }
+  return '';
+}
+
+function extractBudget(text) {
+  var section = extractSection(text, 'Investment');
+  var pounds = section.match(/£\s?\d[\d,]*/g) || text.match(/£\s?\d[\d,]*/g) || [];
+  if (pounds.length >= 2) return cleanValue(pounds[0] + ' - ' + pounds[1]);
+  if (pounds.length === 1) return cleanValue(pounds[0]);
+  return section ? cleanValue(section.split('\n')[0]) : '';
+}
+
+function extractBulletList(sectionText) {
+  return String(sectionText || '')
+    .split(/\r?\n/)
+    .map(function(line) { return cleanValue(line.replace(/^[*\-•]\s*/, '')); })
+    .filter(function(line) { return line && !/^[A-Z][A-Za-z&' -]+$/.test(line); });
+}
+
+function extractStack(text) {
+  var section = extractSection(text, 'Tech Stack');
+  var bullets = extractBulletList(section).map(function(item) {
+    var label = cleanValue(item.split(':')[0]);
+    return titleCaseWords(label.replace(/front-end/i, 'Front-end').replace(/back-end/i, 'Back-end'));
+  }).filter(Boolean);
+  return bullets.length ? bullets : [];
+}
+
+function extractFeatures(text) {
+  var section = extractSection(text, 'Feature Breakdown');
+  var bullets = extractBulletList(section).map(function(item) {
+    return cleanValue(item.replace(/^[^:]+:\s*/, function(match) {
+      return match.replace(/:\s*$/, '');
+    }));
+  });
+  if (bullets.length) {
+    return bullets.slice(0, 6).map(function(item) {
+      var parts = item.split(':');
+      return cleanValue(parts.length > 1 ? parts[0] + ': ' + parts.slice(1).join(':') : item);
+    });
+  }
+  return [];
+}
+
+function extractSocialHandle(text, label) {
+  var re = new RegExp(label + '\\s*:?\\s*(@[A-Za-z0-9._]+|https?:\\/\\/[^\\s]+)', 'i');
+  var m = text.match(re);
+  if (!m) return '';
+  var value = cleanValue(m[1]);
+  if (value.charAt(0) === '@') {
+    var base = label.toLowerCase() === 'instagram' ? 'https://instagram.com/' : 'https://tiktok.com/@';
+    return label.toLowerCase() === 'instagram'
+      ? base + value.slice(1)
+      : base + value.slice(1);
+  }
+  return value;
+}
+
+function inferTagline(businessName, industry) {
+  if (industry === 'fitness') return 'Personal coaching to help clients live their strongest life';
+  if (industry === 'restaurant') return 'Fresh food and memorable dining experiences';
+  if (industry === 'legal') return 'Trusted legal guidance with a personal approach';
+  if (industry === 'florist') return 'Thoughtful floral design for every occasion';
+  if (industry === 'gifts') return 'Meaningful personalised products made to delight';
+  return businessName ? businessName + ' brought to life online' : '';
+}
+
+function inferAbout(text, businessName, industry) {
+  var understanding = extractSection(text, 'Understanding Your Project');
+  if (understanding) return understanding;
+  if (industry === 'fitness') {
+    return businessName + ' is a health and fitness business focused on personalised coaching, client results, and building a strong supportive community online.';
+  }
+  return '';
+}
+
+function normalizeStringList(value) {
+  if (Array.isArray(value)) return value.map(cleanValue).filter(Boolean);
+  if (!value) return [];
+  return String(value).split(/,|\n/).map(cleanValue).filter(Boolean);
+}
+
+function normalizeParsedProposal(parsed, text) {
+  var recipientName = extractGreetingName(text) || extractName(text);
+  var businessName = cleanValue(parsed.businessName) || extractBusinessName(text);
+  var industry = normalizeIndustry(parsed.industry, text);
+  var projectType = normalizeProjectType(parsed.projectType, text);
+  var clientName = cleanValue(parsed.clientName);
+  if (isSuspiciousName(clientName)) clientName = recipientName;
+  if (isSuspiciousName(clientName) && businessName) clientName = businessName;
+
+  var stack = normalizeStringList(parsed.stack);
+  if (!stack.length) stack = extractStack(text);
+  if (!stack.length) stack = ['HTML', 'CSS', 'JS'];
+
+  var features = normalizeStringList(parsed.features);
+  if (!features.length || /responsive design|contact form|seo/i.test(features.join(' '))) {
+    var extractedFeatures = extractFeatures(text);
+    if (extractedFeatures.length) features = extractedFeatures;
+  }
+  if (!features.length) features = ['Responsive design', 'Contact form', 'SEO'];
+
+  var timeline = cleanValue(parsed.timeline) || extractTimeline(text) || 'TBC';
+  var budget = cleanValue(parsed.budget) || extractBudget(text) || 'TBC';
+  var clientEmail = cleanValue(parsed.clientEmail) || extractEmail(text);
+
+  var brandData = {
+    tagline: cleanValue(parsed.tagline) || inferTagline(businessName, industry),
+    about: cleanValue(parsed.about) || inferAbout(text, businessName || clientName, industry),
+    phone: cleanValue(parsed.phone),
+    instagram: cleanValue(parsed.instagram) || extractSocialHandle(text, 'Instagram'),
+    facebook: cleanValue(parsed.facebook),
+    tiktok: cleanValue(parsed.tiktok) || extractSocialHandle(text, 'TikTok'),
+    logo: cleanValue(parsed.logo),
+    hero: cleanValue(parsed.hero) || industry
   };
+
+  return {
+    scope: {
+      clientName: clientName || 'Client',
+      clientEmail: clientEmail,
+      businessName: businessName,
+      projectType: projectType,
+      industry: industry,
+      stack: stack,
+      features: features,
+      timeline: timeline,
+      budget: budget
+    },
+    brand: brandData
+  };
+}
+
+function localGuessScope(text) {
+  return normalizeParsedProposal({}, text).scope;
 }
 
 function goToBrand() {
