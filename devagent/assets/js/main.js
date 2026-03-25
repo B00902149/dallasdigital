@@ -202,16 +202,38 @@ function cleanValue(value) {
   return String(value || '').replace(/\s+/g, ' ').replace(/^[\s,.:;-]+|[\s,.:;-]+$/g, '').trim();
 }
 
+function cleanMultilineValue(value) {
+  return String(value || '')
+    .replace(/\r/g, '')
+    .split('\n')
+    .map(function(line) { return cleanValue(line); })
+    .filter(Boolean)
+    .join('\n');
+}
+
 function titleCaseWords(value) {
   return cleanValue(value).split(/\s+/).map(function(part) {
     return part ? part.charAt(0).toUpperCase() + part.slice(1) : '';
   }).join(' ');
 }
 
+function looksLikePersonName(value) {
+  var v = cleanValue(value);
+  if (!v) return false;
+  if (/\b(anywhere|anyone|someone|everyone|client|business)\b/i.test(v)) return false;
+  if (/[^A-Za-z' -]/.test(v)) return false;
+  var parts = v.split(/\s+/).filter(Boolean);
+  if (!parts.length || parts.length > 3) return false;
+  return parts.every(function(part) {
+    return /^[A-Z][a-z]+(?:'[A-Z][a-z]+)?$/.test(part);
+  });
+}
+
 function isSuspiciousName(value) {
   var v = cleanValue(value).toLowerCase();
   if (!v) return true;
   if (v.length < 3) return true;
+  if (!looksLikePersonName(titleCaseWords(v))) return true;
   if (/(^feature breakdown$|^existing presence$|^understanding your project$|^satisfied clients$|^responsive design$|^contact form$|^seo$|^client$|^business$)/.test(v)) return true;
   if (/(testimonial|deliverable|feature|service|timeline|investment|support|results page|book page|call-to-action|sales funnel)/.test(v)) return true;
   return false;
@@ -255,10 +277,10 @@ function normalizeIndustry(value, text) {
 
 function normalizeProjectType(value, text) {
   var source = cleanValue(value).toLowerCase() + ' ' + String(text || '').toLowerCase();
-  if (/(react native|ios|android|mobile app|app store|play store)/.test(source) && /(website|web app|backend|node|api)/.test(source)) return 'Full-Stack';
+  if (/(full-stack|full stack|web and backend)/.test(source)) return 'Full-Stack';
+  if (/(react native|mobile app|app store|play store)/.test(source) && /(website|backend|api|node\/express)/.test(source)) return 'Full-Stack';
   if (/(react native|ios|android|mobile app|app store|play store)/.test(source)) return 'React Native App';
   if (/(backend|api|node\/express|express|server-side)/.test(source) && !/(website|front-end|frontend|landing page)/.test(source)) return 'Node/Express Backend';
-  if (/(full-stack|full stack|web and backend)/.test(source)) return 'Full-Stack';
   return 'Bespoke Website';
 }
 
@@ -266,7 +288,7 @@ function extractSection(text, heading) {
   var escaped = heading.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   var re = new RegExp(escaped + "\\s*\\n([\\s\\S]*?)(?=\\n[A-Z][A-Za-z&'\\- ]{2,}\\n|$)", 'i');
   var m = text.match(re);
-  return m ? cleanValue(m[1]) : '';
+  return m ? cleanMultilineValue(m[1]) : '';
 }
 
 function extractBusinessName(text) {
@@ -318,7 +340,9 @@ function extractStack(text) {
   var bullets = extractBulletList(section).map(function(item) {
     var label = cleanValue(item.split(':')[0]);
     return titleCaseWords(label.replace(/front-end/i, 'Front-end').replace(/back-end/i, 'Back-end'));
-  }).filter(Boolean);
+  }).filter(function(item) {
+    return item && item.length <= 24 && !/\s{2,}/.test(item) && !/^to ensure /i.test(item);
+  });
   return bullets.length ? bullets : [];
 }
 
@@ -333,6 +357,8 @@ function extractFeatures(text) {
     return bullets.slice(0, 6).map(function(item) {
       var parts = item.split(':');
       return cleanValue(parts.length > 1 ? parts[0] + ': ' + parts.slice(1).join(':') : item);
+    }).filter(function(item) {
+      return item && item.length <= 180;
     });
   }
   return [];
@@ -373,7 +399,9 @@ function inferAbout(text, businessName, industry) {
 function normalizeStringList(value) {
   if (Array.isArray(value)) return value.map(cleanValue).filter(Boolean);
   if (!value) return [];
-  return String(value).split(/,|\n/).map(cleanValue).filter(Boolean);
+  return String(value).split(/,|\n/).map(cleanValue).filter(function(item) {
+    return item && item.length <= 80;
+  });
 }
 
 function normalizeParsedProposal(parsed, text) {
