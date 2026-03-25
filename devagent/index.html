@@ -153,7 +153,7 @@ Nicole"
       </div>
     </div>
     <div class="arow">
-      <button class="btn btn-p" onclick="doBrandedScaffold()">Generate scaffold &#8250;</button>
+      <button class="btn btn-p" id="generateBtn" onclick="doBrandedScaffold()">Generate scaffold &#8250;</button>
       <button class="btn btn-sm" onclick="goTo(2)">&#8249; Back</button>
     </div>
   </div>
@@ -164,13 +164,13 @@ Nicole"
       <div class="lbl">File structure</div>
       <div class="ftree" id="ftree"></div>
     </div>
-    <div class="card">
+    <div class="card" id="previewCard">
       <div class="lbl">Code preview</div>
       <div class="tabs" id="tabRow"></div>
       <div class="code" id="codeBox"></div>
     </div>
-    <div class="arow">
-      <button class="btn btn-p" onclick="doZip()">Download zip</button>
+    <div class="arow" id="downloadActions">
+      <button class="btn btn-p" id="downloadBtn" onclick="doZip()">Download zip</button>
       <button class="btn btn-sm" onclick="goTo(3)">&#8249; Back</button>
     </div>
   </div>

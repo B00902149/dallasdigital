@@ -35,6 +35,7 @@ body {
 }
 .pip-step.active { color: #AFA9EC; background: rgba(83,74,183,0.2); border-color: rgba(83,74,183,0.5); }
 .pip-step.done   { color: #5DCAA5; background: rgba(15,110,86,0.15); border-color: rgba(93,202,165,0.4); }
+.pip-step.done.active { color: #d8f5eb; border-color: rgba(93,202,165,0.55); }
 .pip-arrow { font-size: 11px; color: rgba(255,255,255,0.2); padding: 0 4px; }
 
 /* ── Cards ────────────────────────────────────────────────────────────────── */
@@ -75,6 +76,7 @@ body {
 /* ── Views ────────────────────────────────────────────────────────────────── */
 .view         { display: none; }
 .view.on      { display: block; }
+.is-hidden    { display: none !important; }
 
 /* ── Actions row ──────────────────────────────────────────────────────────── */
 .arow { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 0.5rem; }
