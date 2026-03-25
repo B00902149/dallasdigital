@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DevAgent &mdash; Build Agent</title>
+  <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+<div class="app">
+
+  <div class="header">
+    <h1>DevAgent &mdash; Build Agent</h1>
+    <p>Paste an approved proposal email, then generate a fully branded client scaffold in minutes.</p>
+  </div>
+
+  <div class="pipeline">
+    <div class="pip-step active" id="p1">Paste proposal</div>
+    <span class="pip-arrow">&#8250;</span>
+    <div class="pip-step" id="p2">Review scope</div>
+    <span class="pip-arrow">&#8250;</span>
+    <div class="pip-step" id="p3">Brand &amp; content</div>
+    <span class="pip-arrow">&#8250;</span>
+    <div class="pip-step" id="p4">Download zip</div>
+  </div>
+
+  <!-- ── Step 1: Paste email ─────────────────────────────── -->
+  <div id="v1" class="view on">
+    <div class="card">
+      <div class="lbl">Paste approved proposal email</div>
+      <p style="font-size:13px;color:rgba(255,255,255,.4);margin-bottom:1rem;line-height:1.6">
+        Copy the full email from your inbox and paste it below. Groq will extract the client details,
+        project scope, and pre-fill the brand form automatically.
+      </p>
+      <textarea
+        id="emailPaste"
+        rows="12"
+        placeholder="Paste the full proposal approval email here...
+
+e.g.
+From: Nicole McKee &lt;nicole@craftymammies.co.uk&gt;
+Subject: RE: Proposal Approved — Crafty Mammies Gift Shop
+
+Hi Adrian,
+
+The mock-ups look brilliant. Happy to proceed with the personalised embroidery shop.
+We need a product gallery, custom order form, and Shopify integration.
+
+Phone: 028 9000 1234
+Instagram: @craftymammies
+
+Best,
+Nicole"
+        style="width:100%;padding:12px 14px;background:rgba(255,255,255,.06);border:0.5px solid rgba(255,255,255,.15);border-radius:8px;color:#fff;font-size:13px;font-family:inherit;resize:vertical;line-height:1.6;transition:border-color .2s"
+      ></textarea>
+    </div>
+    <div class="arow">
+      <button class="btn btn-p" id="parseBtn" disabled onclick="parseEmail()">Parse proposal &#8250;</button>
+    </div>
+  </div>
+
+  <!-- ── Step 2: Scope review ────────────────────────────── -->
+  <div id="v2" class="view">
+    <div class="card">
+      <div class="lbl">Parsed scope</div>
+      <p style="font-size:13px;color:rgba(255,255,255,.4);margin-bottom:1rem;line-height:1.6">
+        Groq has extracted the following from the email. Check the project type is correct, then continue.
+      </p>
+      <div class="sgrid" id="scopeSummary" style="display:none"></div>
+    </div>
+    <div class="arow">
+      <button class="btn btn-p" onclick="goToBrand()">Brand &amp; content &#8250;</button>
+      <button class="btn btn-sm" onclick="goTo(1)">&#8249; Back</button>
+    </div>
+  </div>
+
+  <!-- ── Step 3: Brand & content ─────────────────────────── -->
+  <div id="v3" class="view">
+    <div class="card">
+      <div class="lbl">Brand &amp; content</div>
+      <p class="brand-intro">
+        Fields have been pre-filled from the proposal. Review, correct anything missing, then generate.
+      </p>
+
+      <div class="brand-grid">
+
+        <!-- Colour picker -->
+        <div class="brand-field full-width">
+          <div class="lbl">Brand colour <span class="req">*</span></div>
+          <div class="colour-row">
+            <div id="colourSwatch" class="colour-swatch" onclick="togglePicker()"></div>
+            <input type="text" id="brandColour" value="#534AB7" maxlength="7" placeholder="#534AB7" class="hex-input" oninput="onHexInput(this.value)">
+            <span class="colour-hint">Tap the swatch to open the colour wheel</span>
+          </div>
+          <div id="pickerWrap" class="picker-wrap" style="display:none">
+            <canvas id="colourWheel" width="240" height="240" class="colour-wheel"></canvas>
+            <div class="brightness-row">
+              <label class="brightness-label">Brightness</label>
+              <input type="range" id="brightnessSlider" min="0" max="1" step="0.01" value="1" oninput="onBrightnessChange()">
+            </div>
+            <button class="btn btn-sm" style="margin-top:.75rem;width:100%" onclick="togglePicker()">Done</button>
+          </div>
+        </div>
+
+        <!-- Tagline -->
+        <div class="brand-field full-width">
+          <div class="lbl">Tagline <span class="req">*</span></div>
+          <input type="text" id="bTagline" placeholder="e.g. Handcrafted gifts, made with love" maxlength="120" class="brand-input">
+        </div>
+
+        <!-- About -->
+        <div class="brand-field full-width">
+          <div class="lbl">About blurb <span class="req">*</span></div>
+          <textarea id="bAbout" rows="3" placeholder="2-3 sentences about the business." class="brand-textarea"></textarea>
+        </div>
+
+        <!-- Phone & Email -->
+        <div class="brand-field">
+          <div class="lbl">Phone <span class="req">*</span></div>
+          <input type="tel" id="bPhone" placeholder="+44 28 9000 0000" class="brand-input">
+        </div>
+        <div class="brand-field">
+          <div class="lbl">Email <span class="req">*</span></div>
+          <input type="email" id="bEmail" placeholder="hello@yourbusiness.co.uk" class="brand-input">
+        </div>
+
+        <!-- Socials -->
+        <div class="brand-field">
+          <div class="lbl">Instagram <span class="opt">optional</span></div>
+          <input type="url" id="bInstagram" placeholder="https://instagram.com/yourbusiness" class="brand-input">
+        </div>
+        <div class="brand-field">
+          <div class="lbl">Facebook <span class="opt">optional</span></div>
+          <input type="url" id="bFacebook" placeholder="https://facebook.com/yourbusiness" class="brand-input">
+        </div>
+        <div class="brand-field">
+          <div class="lbl">TikTok <span class="opt">optional</span></div>
+          <input type="url" id="bTikTok" placeholder="https://tiktok.com/@yourbusiness" class="brand-input">
+        </div>
+        <div class="brand-field">
+          <div class="lbl">Logo URL <span class="opt">optional</span></div>
+          <input type="url" id="bLogo" placeholder="https://yourdomain.co.uk/logo.png" class="brand-input">
+        </div>
+
+        <!-- Hero keyword -->
+        <div class="brand-field full-width">
+          <div class="lbl">Hero image keyword <span class="opt">optional</span></div>
+          <input type="text" id="bHeroKeyword" placeholder="e.g. restaurant, flowers, gym, legal office" class="brand-input">
+          <p class="field-hint">Used to name the hero image placeholder so you know what photo to swap in.</p>
+        </div>
+
+        <p class="req-note"><span class="req">*</span> Required fields</p>
+      </div>
+    </div>
+    <div class="arow">
+      <button class="btn btn-p" onclick="doBrandedScaffold()">Generate scaffold &#8250;</button>
+      <button class="btn btn-sm" onclick="goTo(2)">&#8249; Back</button>
+    </div>
+  </div>
+
+  <!-- ── Step 4: Scaffold preview + download ─────────────── -->
+  <div id="v4" class="view">
+    <div class="card">
+      <div class="lbl">File structure</div>
+      <div class="ftree" id="ftree"></div>
+    </div>
+    <div class="card">
+      <div class="lbl">Code preview</div>
+      <div class="tabs" id="tabRow"></div>
+      <div class="code" id="codeBox"></div>
+    </div>
+    <div class="arow">
+      <button class="btn btn-p" onclick="doZip()">Download zip</button>
+      <button class="btn btn-sm" onclick="goTo(3)">&#8249; Back</button>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="assets/js/scaffold-data.js"></script>
+<script src="assets/js/main.js"></script>
+</body>
+</html>
