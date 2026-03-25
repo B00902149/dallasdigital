@@ -11,66 +11,76 @@
 
   <div class="header">
     <h1>DevAgent &mdash; Build Agent</h1>
-    <p>Pull approved proposals from Gmail and scaffold your project automatically.</p>
+    <p>Paste an approved proposal email, then generate a fully branded client scaffold in minutes.</p>
   </div>
 
   <div class="pipeline">
-    <div class="pip-step active" id="p1">Fetch proposals</div>
+    <div class="pip-step active" id="p1">Paste proposal</div>
     <span class="pip-arrow">&#8250;</span>
-    <div class="pip-step" id="p2">Parse scope</div>
+    <div class="pip-step" id="p2">Review scope</div>
     <span class="pip-arrow">&#8250;</span>
     <div class="pip-step" id="p3">Brand &amp; content</div>
     <span class="pip-arrow">&#8250;</span>
-    <div class="pip-step" id="p4">Generate scaffold</div>
-    <span class="pip-arrow">&#8250;</span>
-    <div class="pip-step" id="p5">Download zip</div>
+    <div class="pip-step" id="p4">Download zip</div>
   </div>
 
-  <!-- ── Step 1: Fetch proposals ─────────────────────────────────── -->
+  <!-- ── Step 1: Paste email ─────────────────────────────── -->
   <div id="v1" class="view on">
     <div class="card">
-      <div class="lbl">Approved proposals in Gmail</div>
-      <div class="notice" id="gmailNote">&#9888; Gmail MCP requires claude.ai. Showing demo data.</div>
-      <div class="email-list" id="elist">
-        <div class="loading-state">
-          <div class="spin"></div>Connecting to Gmail...
-        </div>
-      </div>
+      <div class="lbl">Paste approved proposal email</div>
+      <p style="font-size:13px;color:rgba(255,255,255,.4);margin-bottom:1rem;line-height:1.6">
+        Copy the full email from your inbox and paste it below. Groq will extract the client details,
+        project scope, and pre-fill the brand form automatically.
+      </p>
+      <textarea
+        id="emailPaste"
+        rows="12"
+        placeholder="Paste the full proposal approval email here...
+
+e.g.
+From: Nicole McKee &lt;nicole@craftymammies.co.uk&gt;
+Subject: RE: Proposal Approved — Crafty Mammies Gift Shop
+
+Hi Adrian,
+
+The mock-ups look brilliant. Happy to proceed with the personalised embroidery shop.
+We need a product gallery, custom order form, and Shopify integration.
+
+Phone: 028 9000 1234
+Instagram: @craftymammies
+
+Best,
+Nicole"
+        style="width:100%;padding:12px 14px;background:rgba(255,255,255,.06);border:0.5px solid rgba(255,255,255,.15);border-radius:8px;color:#fff;font-size:13px;font-family:inherit;resize:vertical;line-height:1.6;transition:border-color .2s"
+      ></textarea>
     </div>
     <div class="arow">
-      <button class="btn btn-p" id="goBtn" disabled onclick="doScope()">Parse selected proposal &#8250;</button>
-      <button class="btn btn-sm" onclick="loadEmails()">Refresh inbox</button>
+      <button class="btn btn-p" id="parseBtn" disabled onclick="parseEmail()">Parse proposal &#8250;</button>
     </div>
   </div>
 
-  <!-- ── Step 2: Parse scope ─────────────────────────────────────── -->
+  <!-- ── Step 2: Scope review ────────────────────────────── -->
   <div id="v2" class="view">
     <div class="card">
-      <div class="lbl">Proposal content</div>
-      <div class="preview" id="prevBox"></div>
-    </div>
-    <div class="card" id="scopeCard" style="display:none">
       <div class="lbl">Parsed scope</div>
-      <div class="sbar" id="scopeSpin"><div class="spin"></div>&nbsp;Analysing with Claude...</div>
-      <div class="sgrid" id="scopeGrid" style="display:none"></div>
+      <p style="font-size:13px;color:rgba(255,255,255,.4);margin-bottom:1rem;line-height:1.6">
+        Groq has extracted the following from the email. Check the project type is correct, then continue.
+      </p>
+      <div class="sgrid" id="scopeSummary" style="display:none"></div>
     </div>
-    <div class="arow" id="scopeActs" style="display:none">
+    <div class="arow">
       <button class="btn btn-p" onclick="goToBrand()">Brand &amp; content &#8250;</button>
       <button class="btn btn-sm" onclick="goTo(1)">&#8249; Back</button>
     </div>
   </div>
 
-  <!-- ── Step 3: Brand & content ─────────────────────────────────── -->
+  <!-- ── Step 3: Brand & content ─────────────────────────── -->
   <div id="v3" class="view">
     <div class="card">
       <div class="lbl">Brand &amp; content</div>
-      <!-- Auto-fill status banner -->
-      <div id="autoFillBanner" style="display:none;align-items:center;gap:10px;padding:10px 14px;background:rgba(83,74,183,0.15);border:0.5px solid rgba(83,74,183,0.4);border-radius:8px;margin-bottom:1.25rem;font-size:13px;color:#AFA9EC">
-        <div class="spin" style="border-top-color:#AFA9EC"></div>
-        Claude is reading your proposal and filling in the fields&hellip;
-      </div>
-
-      <p class="brand-intro">Fields have been pre-filled from the proposal email. Review, correct anything, and add any missing details before generating.</p>
+      <p class="brand-intro">
+        Fields have been pre-filled from the proposal. Review, correct anything missing, then generate.
+      </p>
 
       <div class="brand-grid">
 
@@ -101,7 +111,7 @@
         <!-- About -->
         <div class="brand-field full-width">
           <div class="lbl">About blurb <span class="req">*</span></div>
-          <textarea id="bAbout" rows="3" placeholder="2-3 sentences about the business. This will appear in the About section." class="brand-textarea"></textarea>
+          <textarea id="bAbout" rows="3" placeholder="2-3 sentences about the business." class="brand-textarea"></textarea>
         </div>
 
         <!-- Phone & Email -->
@@ -136,7 +146,7 @@
         <div class="brand-field full-width">
           <div class="lbl">Hero image keyword <span class="opt">optional</span></div>
           <input type="text" id="bHeroKeyword" placeholder="e.g. restaurant, flowers, gym, legal office" class="brand-input">
-          <p class="field-hint">Used to name the hero image placeholder in the HTML so you know what to swap in.</p>
+          <p class="field-hint">Used to name the hero image placeholder so you know what photo to swap in.</p>
         </div>
 
         <p class="req-note"><span class="req">*</span> Required fields</p>
@@ -148,7 +158,7 @@
     </div>
   </div>
 
-  <!-- ── Step 4: Scaffold preview ────────────────────────────────── -->
+  <!-- ── Step 4: Scaffold preview + download ─────────────── -->
   <div id="v4" class="view">
     <div class="card">
       <div class="lbl">File structure</div>
@@ -162,16 +172,6 @@
     <div class="arow">
       <button class="btn btn-p" onclick="doZip()">Download zip</button>
       <button class="btn btn-sm" onclick="goTo(3)">&#8249; Back</button>
-    </div>
-  </div>
-
-  <!-- ── Step 5: Done ────────────────────────────────────────────── -->
-  <div id="v5" class="view">
-    <div class="card success-card">
-      <div class="success-icon">&#10003;</div>
-      <div class="success-title">Scaffold downloaded</div>
-      <div class="success-sub">Your project files are ready. Start building.</div>
-      <button class="btn btn-p" onclick="doReset()">Start another project</button>
     </div>
   </div>
 
