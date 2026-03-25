@@ -26,6 +26,10 @@ app.use(express.json());
 // ── Serve static site from project root ─────────────────────
 app.use(express.static(path.join(__dirname)));
 
+// ── Serve DevAgent Build Agent ───────────────────────────────
+// Access at: https://your-domain.com/devagent
+app.use('/devagent', express.static(path.join(__dirname, 'devagent')));
+
 // ── In-memory pending quotes store ──────────────────────────
 // { [token]: { quoteText, lead, createdAt } }
 const pendingQuotes = new Map();
@@ -430,7 +434,7 @@ function buildAdminEmail({ name, email, biz_name, industry, project_type, platfo
         </tr>
       </table>
       <p style="margin:0 0 36px;color:#3a3a5c;font-size:12px;">
-        This link works once and expires in 7 days. Your local server must be running when you click it.
+        This link works once and expires in 7 days.
       </p>
     </td></tr>
 
@@ -614,6 +618,7 @@ app.listen(PORT, async () => {
   console.log(`   POST /api/claude          → Groq proxy (AI demo + chatbot)`);
   console.log(`   POST /api/quote-request   → Generate & email quote for approval`);
   console.log(`   GET  /api/approve/:token  → Approve & send quote to customer`);
+  console.log(`   GET  /devagent            → DevAgent Build Agent`);
 
   // ── Validate .env variables ──────────────────────────────
   console.log(`\n${'─'.repeat(55)}`);
@@ -643,20 +648,6 @@ app.listen(PORT, async () => {
     console.log(`\n   ⚠️  Fix the above .env values then restart the server.`);
     console.log(`${'─'.repeat(55)}\n`);
     return;
-  }
-
-  // ── Validate SendGrid config ─────────────────────────────
-  console.log(`\n📧 Checking SendGrid configuration...`);
-  if (!process.env.SENDGRID_API_KEY || process.env.SENDGRID_API_KEY.startsWith('YOUR_')) {
-    console.log(`   ❌ SENDGRID_API_KEY — missing or placeholder`);
-    console.log(`   Get one free at: sendgrid.com → API Keys`);
-  } else if (!process.env.SENDGRID_FROM_EMAIL || process.env.SENDGRID_FROM_EMAIL.startsWith('YOUR_')) {
-    console.log(`   ❌ SENDGRID_FROM_EMAIL — missing or placeholder`);
-    console.log(`   Must match a verified sender in SendGrid → Sender Authentication`);
-  } else {
-    console.log(`   ✅ SendGrid API key set`);
-    console.log(`   ✅ Sending from: ${process.env.SENDGRID_FROM_EMAIL}`);
-    console.log(`   ✅ Ready to send emails via HTTPS`);
   }
 
   console.log(`${'─'.repeat(55)}\n`);

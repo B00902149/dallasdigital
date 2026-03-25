@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DevAgent &mdash; Build Agent</title>
+  <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+<div class="app">
+
+  <div class="header">
+    <h1>DevAgent &mdash; Build Agent</h1>
+    <p>Pull approved proposals from Gmail and scaffold your project automatically.</p>
+  </div>
+
+  <div class="pipeline">
+    <div class="pip-step active" id="p1">Fetch proposals</div>
+    <span class="pip-arrow">&#8250;</span>
+    <div class="pip-step" id="p2">Parse scope</div>
+    <span class="pip-arrow">&#8250;</span>
+    <div class="pip-step" id="p3">Brand &amp; content</div>
+    <span class="pip-arrow">&#8250;</span>
+    <div class="pip-step" id="p4">Generate scaffold</div>
+    <span class="pip-arrow">&#8250;</span>
+    <div class="pip-step" id="p5">Download zip</div>
+  </div>
+
+  <!-- ── Step 1: Fetch proposals ─────────────────────────────────── -->
+  <div id="v1" class="view on">
+    <div class="card">
+      <div class="lbl">Approved proposals in Gmail</div>
+      <div class="notice" id="gmailNote">&#9888; Gmail MCP requires claude.ai. Showing demo data.</div>
+      <div class="email-list" id="elist">
+        <div class="loading-state">
+          <div class="spin"></div>Connecting to Gmail...
+        </div>
+      </div>
+    </div>
+    <div class="arow">
+      <button class="btn btn-p" id="goBtn" disabled onclick="doScope()">Parse selected proposal &#8250;</button>
+      <button class="btn btn-sm" onclick="loadEmails()">Refresh inbox</button>
+    </div>
+  </div>
+
+  <!-- ── Step 2: Parse scope ─────────────────────────────────────── -->
+  <div id="v2" class="view">
+    <div class="card">
+      <div class="lbl">Proposal content</div>
+      <div class="preview" id="prevBox"></div>
+    </div>
+    <div class="card" id="scopeCard" style="display:none">
+      <div class="lbl">Parsed scope</div>
+      <div class="sbar" id="scopeSpin"><div class="spin"></div>&nbsp;Analysing with Claude...</div>
+      <div class="sgrid" id="scopeGrid" style="display:none"></div>
+    </div>
+    <div class="arow" id="scopeActs" style="display:none">
+      <button class="btn btn-p" onclick="goToBrand()">Brand &amp; content &#8250;</button>
+      <button class="btn btn-sm" onclick="goTo(1)">&#8249; Back</button>
+    </div>
+  </div>
+
+  <!-- ── Step 3: Brand & content ─────────────────────────────────── -->
+  <div id="v3" class="view">
+    <div class="card">
+      <div class="lbl">Brand &amp; content</div>
+      <!-- Auto-fill status banner -->
+      <div id="autoFillBanner" style="display:none;align-items:center;gap:10px;padding:10px 14px;background:rgba(83,74,183,0.15);border:0.5px solid rgba(83,74,183,0.4);border-radius:8px;margin-bottom:1.25rem;font-size:13px;color:#AFA9EC">
+        <div class="spin" style="border-top-color:#AFA9EC"></div>
+        Claude is reading your proposal and filling in the fields&hellip;
+      </div>
+
+      <p class="brand-intro">Fields have been pre-filled from the proposal email. Review, correct anything, and add any missing details before generating.</p>
+
+      <div class="brand-grid">
+
+        <!-- Colour picker -->
+        <div class="brand-field full-width">
+          <div class="lbl">Brand colour <span class="req">*</span></div>
+          <div class="colour-row">
+            <div id="colourSwatch" class="colour-swatch" onclick="togglePicker()"></div>
+            <input type="text" id="brandColour" value="#534AB7" maxlength="7" placeholder="#534AB7" class="hex-input" oninput="onHexInput(this.value)">
+            <span class="colour-hint">Tap the swatch to open the colour wheel</span>
+          </div>
+          <div id="pickerWrap" class="picker-wrap" style="display:none">
+            <canvas id="colourWheel" width="240" height="240" class="colour-wheel"></canvas>
+            <div class="brightness-row">
+              <label class="brightness-label">Brightness</label>
+              <input type="range" id="brightnessSlider" min="0" max="1" step="0.01" value="1" oninput="onBrightnessChange()">
+            </div>
+            <button class="btn btn-sm" style="margin-top:.75rem;width:100%" onclick="togglePicker()">Done</button>
+          </div>
+        </div>
+
+        <!-- Tagline -->
+        <div class="brand-field full-width">
+          <div class="lbl">Tagline <span class="req">*</span></div>
+          <input type="text" id="bTagline" placeholder="e.g. Handcrafted gifts, made with love" maxlength="120" class="brand-input">
+        </div>
+
+        <!-- About -->
+        <div class="brand-field full-width">
+          <div class="lbl">About blurb <span class="req">*</span></div>
+          <textarea id="bAbout" rows="3" placeholder="2-3 sentences about the business. This will appear in the About section." class="brand-textarea"></textarea>
+        </div>
+
+        <!-- Phone & Email -->
+        <div class="brand-field">
+          <div class="lbl">Phone <span class="req">*</span></div>
+          <input type="tel" id="bPhone" placeholder="+44 28 9000 0000" class="brand-input">
+        </div>
+        <div class="brand-field">
+          <div class="lbl">Email <span class="req">*</span></div>
+          <input type="email" id="bEmail" placeholder="hello@yourbusiness.co.uk" class="brand-input">
+        </div>
+
+        <!-- Socials -->
+        <div class="brand-field">
+          <div class="lbl">Instagram <span class="opt">optional</span></div>
+          <input type="url" id="bInstagram" placeholder="https://instagram.com/yourbusiness" class="brand-input">
+        </div>
+        <div class="brand-field">
+          <div class="lbl">Facebook <span class="opt">optional</span></div>
+          <input type="url" id="bFacebook" placeholder="https://facebook.com/yourbusiness" class="brand-input">
+        </div>
+        <div class="brand-field">
+          <div class="lbl">TikTok <span class="opt">optional</span></div>
+          <input type="url" id="bTikTok" placeholder="https://tiktok.com/@yourbusiness" class="brand-input">
+        </div>
+        <div class="brand-field">
+          <div class="lbl">Logo URL <span class="opt">optional</span></div>
+          <input type="url" id="bLogo" placeholder="https://yourdomain.co.uk/logo.png" class="brand-input">
+        </div>
+
+        <!-- Hero keyword -->
+        <div class="brand-field full-width">
+          <div class="lbl">Hero image keyword <span class="opt">optional</span></div>
+          <input type="text" id="bHeroKeyword" placeholder="e.g. restaurant, flowers, gym, legal office" class="brand-input">
+          <p class="field-hint">Used to name the hero image placeholder in the HTML so you know what to swap in.</p>
+        </div>
+
+        <p class="req-note"><span class="req">*</span> Required fields</p>
+      </div>
+    </div>
+    <div class="arow">
+      <button class="btn btn-p" onclick="doBrandedScaffold()">Generate scaffold &#8250;</button>
+      <button class="btn btn-sm" onclick="goTo(2)">&#8249; Back</button>
+    </div>
+  </div>
+
+  <!-- ── Step 4: Scaffold preview ────────────────────────────────── -->
+  <div id="v4" class="view">
+    <div class="card">
+      <div class="lbl">File structure</div>
+      <div class="ftree" id="ftree"></div>
+    </div>
+    <div class="card">
+      <div class="lbl">Code preview</div>
+      <div class="tabs" id="tabRow"></div>
+      <div class="code" id="codeBox"></div>
+    </div>
+    <div class="arow">
+      <button class="btn btn-p" onclick="doZip()">Download zip</button>
+      <button class="btn btn-sm" onclick="goTo(3)">&#8249; Back</button>
+    </div>
+  </div>
+
+  <!-- ── Step 5: Done ────────────────────────────────────────────── -->
+  <div id="v5" class="view">
+    <div class="card success-card">
+      <div class="success-icon">&#10003;</div>
+      <div class="success-title">Scaffold downloaded</div>
+      <div class="success-sub">Your project files are ready. Start building.</div>
+      <button class="btn btn-p" onclick="doReset()">Start another project</button>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="assets/js/scaffold-data.js"></script>
+<script src="assets/js/main.js"></script>
+</body>
+</html>
