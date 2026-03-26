@@ -144,12 +144,25 @@ function setHidden(id, hidden) {
 
 // ─── AI CALL ──────────────────────────────────────────────────────────────────
 
-async function aiCall(messages, system) {
+async function aiCall(messages, system, maxTokens) {
   var res = await fetch(API_BASE + '/api/claude', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ system: system || '', messages: messages, max_tokens: 1500 })
+    body: JSON.stringify({
+      system: system || '',
+      messages: messages,
+      max_tokens: maxTokens || 1500
+    })
   });
+
+  // Guard: if the proxy returns a non-JSON response (e.g. HTML error page on 403/405),
+  // surface a clear error rather than a confusing JSON parse failure.
+  var contentType = res.headers.get('content-type') || '';
+  if (!contentType.includes('application/json')) {
+    var text = await res.text();
+    throw new Error('API proxy returned HTTP ' + res.status + '. Response: ' + text.slice(0, 120));
+  }
+
   var data = await res.json();
   if (data.error) throw new Error(data.error);
   return (data.content || []).map(function(b) { return b.text || ''; }).filter(Boolean).join('\n');
@@ -721,7 +734,7 @@ function buildAuditPayload() {
     inspiration_urls: [],
     scaffold_summary: scaffoldSummary,
     scaffold_pages: scaffoldPages,
-    proposal_markdown: (sel && sel.rawText) ? sel.rawText.slice(0, 2000) : null
+    proposal_markdown: (sel && sel.rawText) ? sel.rawText.slice(0, 800) : null
   };
 }
 
@@ -755,10 +768,14 @@ async function runAudit() {
   try {
     var raw = await aiCall(
       [{ role: 'user', content: userMessage }],
-      AUDIT_SYSTEM_PROMPT
+      AUDIT_SYSTEM_PROMPT,
+      4000
     );
 
-    var parsed = JSON.parse(raw.replace(/```json|```/g, '').trim());
+    // Strip any markdown fences or stray prose before/after the JSON object
+    var jsonMatch = raw.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('No JSON object found in audit response.');
+    var parsed = JSON.parse(jsonMatch[0]);
     auditReport = parsed;
     renderAuditView(auditReport);
   } catch (e) {
