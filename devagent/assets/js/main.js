@@ -4,42 +4,10 @@ var sel = null;
 var scope = null;
 var files = {};
 var brand = {};
-var auditReport = null;
-var WORKFLOW_STEPS = 5;
+var WORKFLOW_STEPS = 4;
 
 // Routes through the existing Railway proxy.
 var API_BASE = window.location.origin;
-
-// ─── AUDIT AGENT SYSTEM PROMPT ───────────────────────────────────────────────
-
-var AUDIT_SYSTEM_PROMPT = [
-  'You are a website audit agent. Return ONLY a valid JSON object — no prose, no markdown, no code fences.',
-  '',
-  'AUDIT MODE — detect from input:',
-  '"scaffold": no client_url — audit scaffold + proposal only, forward-looking recommendations.',
-  '"live": client_url present, no scaffold — audit live site only.',
-  '"cross_reference": both present — cross-reference live site, scaffold, and proposal.',
-  '',
-  'RUN ALL 11 STEPS and populate these exact JSON keys:',
-  'audit_mode | confidence_note | client_name | company_name',
-  'audience: { target_audience, value_proposition, messaging_gaps[] }',
-  'conversion: { friction_points[]{issue,location,recommendation} }',
-  'copy: { headline_score, headline_recommendation, copy_issues[], copy_tone_recommended }',
-  'structure: { services_clarity_score, services_clarity_note, recommended_nav_structure[], page_gaps[] }',
-  'seo: { seo_score, seo_recommendations[] }',
-  'content: { content_pillars[3], suggested_posts[] }',
-  'objections: { top_objections[] }',
-  'trust: { trust_signals_present[], trust_signals_missing[], trust_placement_recommendations[] }',
-  'cross_reference_notes (string or null)',
-  'priority_actions: { quick_wins[]{action,impact,scope}, long_term_fixes[]{action,impact,scope} }',
-  'recommended_pages[] | scaffold_alignment_score',
-  '',
-  'RULES: Scores 1-10, conservative (8-10 rare). Empty arrays not null.',
-  'Every recommendation must name a specific page or section.',
-  'If client_url is inaccessible fall back to scaffold mode and note it in confidence_note.'
-].join('\n');
-
-// ─── PIP / NAVIGATION ─────────────────────────────────────────────────────────
 
 function pip(n, completed) {
   var step = Math.max(1, Math.min(WORKFLOW_STEPS, n || 1));
@@ -77,33 +45,16 @@ function setHidden(id, hidden) {
   el.classList.toggle('is-hidden', !!hidden);
 }
 
-// ─── AI CALL ──────────────────────────────────────────────────────────────────
-
-async function aiCall(messages, system, maxTokens) {
+async function aiCall(messages, system) {
   var res = await fetch(API_BASE + '/api/claude', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      system: system || '',
-      messages: messages,
-      max_tokens: maxTokens || 1500
-    })
+    body: JSON.stringify({ system: system || '', messages: messages, max_tokens: 1500 })
   });
-
-  // Guard: if the proxy returns a non-JSON response (e.g. HTML error page on 403/405),
-  // surface a clear error rather than a confusing JSON parse failure.
-  var contentType = res.headers.get('content-type') || '';
-  if (!contentType.includes('application/json')) {
-    var text = await res.text();
-    throw new Error('API proxy returned HTTP ' + res.status + '. Response: ' + text.slice(0, 120));
-  }
-
   var data = await res.json();
   if (data.error) throw new Error(data.error);
   return (data.content || []).map(function(b) { return b.text || ''; }).filter(Boolean).join('\n');
 }
-
-// ─── PARSE VIEW ───────────────────────────────────────────────────────────────
 
 function initPasteView() {
   var btn = document.getElementById('parseBtn');
@@ -157,8 +108,7 @@ async function parseEmail() {
       + '  "facebook": "facebook URL if mentioned",\n'
       + '  "tiktok": "tiktok URL if mentioned",\n'
       + '  "logo": "logo URL if mentioned",\n'
-      + '  "hero": "1-2 word image keyword matching the industry e.g. restaurant, flowers, gym",\n'
-      + '  "clientUrl": "existing website URL if mentioned, empty string if not"\n'
+      + '  "hero": "1-2 word image keyword matching the industry e.g. restaurant, flowers, gym"\n'
       + '}'
     );
 
@@ -205,8 +155,6 @@ async function parseEmail() {
   goTo(2);
 }
 
-// ─── SCOPE SUMMARY ────────────────────────────────────────────────────────────
-
 function renderScopeSummary(s) {
   var el = document.getElementById('scopeSummary');
   if (!el) return;
@@ -214,10 +162,6 @@ function renderScopeSummary(s) {
   var features = (s.features || []).map(function(f) { return '&#8226; ' + esc(f); }).join('<br>');
   var timeline = esc(s.timeline || 'TBC');
   var timelineCompact = esc(compactTimeline(s.timeline || 'TBC'));
-  var clientUrlDisplay = s.clientUrl
-    ? '<a href="' + esc(s.clientUrl) + '" target="_blank" style="color:var(--accent)">' + esc(s.clientUrl) + '</a>'
-    : '<span style="opacity:.5">None — new build</span>';
-
   el.style.display = 'grid';
   el.innerHTML =
       '<div class="sitem"><div class="skey">Client</div><div class="sval">' + esc(s.clientName || '-') + '</div></div>'
@@ -226,7 +170,6 @@ function renderScopeSummary(s) {
     + '<div class="sitem"><div class="skey">Industry</div><div class="sval">' + esc(s.industry || '-') + '</div></div>'
     + '<div class="sitem"><div class="skey">Budget</div><div class="sval">' + esc(s.budget || 'TBC') + '</div></div>'
     + '<div class="sitem"><div class="skey">Timeline</div><div class="sval">' + timelineCompact + '</div><div class="smeta">' + timeline + '</div></div>'
-    + '<div class="sitem" style="grid-column:1/-1"><div class="skey">Existing site</div><div class="sval">' + clientUrlDisplay + '</div></div>'
     + '<div class="sitem" style="grid-column:1/-1"><div class="skey">Stack</div><div class="sval">' + esc(stack || 'TBC') + '</div></div>'
     + '<div class="sitem" style="grid-column:1/-1"><div class="skey">Features</div>'
     +   '<div class="sval stext-list">'
@@ -239,8 +182,6 @@ function renderScopeSummary(s) {
     +     '<option value="Full-Stack"' + (s.projectType === 'Full-Stack' ? ' selected' : '') + '>Full-Stack (Web + Backend)</option>'
     +   '</select></div>';
 }
-
-// ─── PARSING HELPERS ──────────────────────────────────────────────────────────
 
 function compactTimeline(value) {
   var text = cleanValue(value);
@@ -255,16 +196,6 @@ function compactTimeline(value) {
 function extractEmail(text) {
   var m = text.match(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/);
   return m ? m[0] : '';
-}
-
-function extractClientUrl(text) {
-  // Look for explicit "website" or "existing" URL mentions first
-  var explicit = text.match(/(?:existing (?:website|site)|current (?:website|site)|website)[:\s]+?(https?:\/\/[^\s,\n"'<>]+)/i);
-  if (explicit) return cleanValue(explicit[1]);
-  // Fall back to any URL that looks like a business website (not social)
-  var urls = text.match(/https?:\/\/(?!(?:www\.)?(?:instagram|facebook|tiktok|twitter|linkedin|youtube)\.)[^\s,\n"'<>]+/g);
-  if (urls && urls.length) return cleanValue(urls[0]);
-  return '';
 }
 
 function cleanValue(value) {
@@ -316,8 +247,10 @@ function extractGreetingName(text) {
 function extractName(text) {
   var greeting = extractGreetingName(text);
   if (greeting && !isSuspiciousName(greeting)) return greeting;
+
   var fromMatch = text.match(/(?:from|regards|cheers|thanks|best regards|kind regards|best)[,:\s]+([A-Z][a-z]+(?: [A-Z][a-z]+){0,2})/i);
   if (fromMatch && !isSuspiciousName(fromMatch[1])) return cleanValue(fromMatch[1]);
+
   return 'Client';
 }
 
@@ -495,9 +428,6 @@ function normalizeParsedProposal(parsed, text) {
   var budget = cleanValue(parsed.budget) || extractBudget(text) || 'TBC';
   var clientEmail = cleanValue(parsed.clientEmail) || extractEmail(text);
 
-  // clientUrl: prefer AI-parsed value, fall back to regex extraction from raw text
-  var clientUrl = cleanValue(parsed.clientUrl) || extractClientUrl(text);
-
   var brandData = {
     tagline: cleanValue(parsed.tagline) || inferTagline(businessName, industry),
     about: cleanValue(parsed.about) || inferAbout(text, businessName || clientName, industry),
@@ -519,8 +449,7 @@ function normalizeParsedProposal(parsed, text) {
       stack: stack,
       features: features,
       timeline: timeline,
-      budget: budget,
-      clientUrl: clientUrl
+      budget: budget
     },
     brand: brandData
   };
@@ -529,8 +458,6 @@ function normalizeParsedProposal(parsed, text) {
 function localGuessScope(text) {
   return normalizeParsedProposal({}, text).scope;
 }
-
-// ─── BRAND VIEW ───────────────────────────────────────────────────────────────
 
 function goToBrand() {
   if (!scope) {
@@ -588,8 +515,6 @@ function validateBrand(b) {
   return missing;
 }
 
-// ─── SCAFFOLD ─────────────────────────────────────────────────────────────────
-
 async function doBrandedScaffold() {
   if (!scope) {
     alert('Please parse a proposal before generating a scaffold.');
@@ -629,307 +554,7 @@ async function doScaffold() {
   var keys = Object.keys(files);
   renderTabs(keys);
   if (keys.length) showFile(keys[0]);
-
-  // Kick off audit agent after scaffold is ready — non-blocking render
-  runAudit();
 }
-
-// ─── AUDIT AGENT ─────────────────────────────────────────────────────────────
-
-function buildAuditPayload() {
-  var scaffoldPages = Object.keys(files)
-    .filter(function(f) { return f.indexOf('.html') !== -1; })
-    .map(function(f) { return f.replace(/\//g, ' / '); });
-
-  var scaffoldSummary = [
-    'Project type: ' + (scope.projectType || 'Bespoke Website'),
-    'Files generated: ' + Object.keys(files).join(', '),
-    'Pages: ' + (scaffoldPages.join(', ') || 'index.html'),
-    'Features: ' + (scope.features || []).join(', '),
-    'Stack: ' + (scope.stack || []).join(', ')
-  ].join('\n');
-
-  return {
-    client_name: scope.clientName || '',
-    company_name: scope.businessName || '',
-    industry: scope.industry || '',
-    project_type: scope.projectType || '',
-    deliverables: scope.features || [],
-    pages_required: scaffoldPages,
-    features: scope.features || [],
-    tech_stack: (scope.stack || []).join(', '),
-    timeline: scope.timeline || '',
-    deadline: '',
-    budget_range: scope.budget || '',
-    pain_points: [],
-    goals_stated: brand.tagline ? [brand.tagline] : [],
-    copy_tone: brand.tagline || '',
-    client_url: scope.clientUrl || null,
-    competitor_urls: [],
-    inspiration_urls: [],
-    scaffold_summary: scaffoldSummary,
-    scaffold_pages: scaffoldPages,
-    proposal_markdown: (sel && sel.rawText) ? sel.rawText.slice(0, 800) : null
-  };
-}
-
-function detectAuditMode(payload) {
-  var hasUrl = payload.client_url && payload.client_url.length > 0;
-  var hasScaffold = payload.scaffold_pages && payload.scaffold_pages.length > 0;
-  if (hasUrl && hasScaffold) return 'cross_reference';
-  if (hasUrl) return 'live';
-  return 'scaffold';
-}
-
-async function runAudit() {
-  auditReport = null;
-  var auditBtn = document.getElementById('auditBtn');
-  if (auditBtn) {
-    auditBtn.disabled = true;
-    auditBtn.textContent = 'Running audit...';
-  }
-
-  // Show v5 in loading state immediately
-  renderAuditLoading();
-
-  var payload = buildAuditPayload();
-  var mode = detectAuditMode(payload);
-
-  var userMessage = 'You are the website audit agent. Run in mode: ' + mode + '.\n\n'
-    + 'Here is the dev agent output for this project:\n\n'
-    + JSON.stringify(payload, null, 2)
-    + '\n\nRun your full audit and return the structured JSON report only.';
-
-  try {
-    var raw = await aiCall(
-      [{ role: 'user', content: userMessage }],
-      AUDIT_SYSTEM_PROMPT,
-      4000
-    );
-
-    // Strip any markdown fences or stray prose before/after the JSON object
-    var jsonMatch = raw.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error('No JSON object found in audit response.');
-    var parsed = JSON.parse(jsonMatch[0]);
-    auditReport = parsed;
-    renderAuditView(auditReport);
-  } catch (e) {
-    renderAuditError(e.message || 'Audit failed. Check the console for details.');
-  } finally {
-    if (auditBtn) {
-      auditBtn.disabled = false;
-      auditBtn.textContent = 'View audit \u203a';
-    }
-  }
-}
-
-// ─── AUDIT VIEW RENDERING ─────────────────────────────────────────────────────
-
-function renderAuditLoading() {
-  var container = document.getElementById('auditContent');
-  if (!container) return;
-  container.innerHTML = '<div class="sbar" style="margin:2rem 0"><div class="spin"></div>&nbsp;Running website audit...</div>';
-}
-
-function renderAuditError(msg) {
-  var container = document.getElementById('auditContent');
-  if (!container) return;
-  container.innerHTML = '<div style="color:#e74c3c;padding:1.5rem;border:1px solid rgba(231,76,60,.3);border-radius:8px;margin:1rem 0">'
-    + '<strong>Audit error</strong><br><span style="opacity:.7;font-size:.9rem">' + esc(msg) + '</span>'
-    + '</div>';
-}
-
-function scoreBadge(score) {
-  var colour = score >= 7 ? '#27ae60' : score >= 4 ? '#f39c12' : '#e74c3c';
-  return '<span style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:.8rem;font-weight:600;background:' + colour + '22;color:' + colour + ';border:1px solid ' + colour + '44">' + score + '/10</span>';
-}
-
-function impactBadge(impact) {
-  var colour = impact === 'high' ? '#e74c3c' : impact === 'medium' ? '#f39c12' : '#888';
-  return '<span style="display:inline-block;padding:1px 8px;border-radius:20px;font-size:.75rem;font-weight:600;background:' + colour + '22;color:' + colour + ';border:1px solid ' + colour + '33;text-transform:uppercase;margin-right:6px">' + impact + '</span>';
-}
-
-function modeBadge(mode) {
-  var labels = { live: 'Live site', scaffold: 'Scaffold only', cross_reference: 'Cross-reference' };
-  var colours = { live: '#27ae60', scaffold: '#534AB7', cross_reference: '#e67e22' };
-  var label = labels[mode] || mode;
-  var colour = colours[mode] || '#888';
-  return '<span style="display:inline-block;padding:3px 12px;border-radius:20px;font-size:.8rem;font-weight:600;background:' + colour + '22;color:' + colour + ';border:1px solid ' + colour + '44">' + label + '</span>';
-}
-
-function auditSection(title, content) {
-  return '<div class="audit-section" style="margin-bottom:1.75rem">'
-    + '<h3 style="font-size:.75rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;opacity:.4;margin:0 0 .75rem">' + esc(title) + '</h3>'
-    + content
-    + '</div>';
-}
-
-function auditCard(content) {
-  return '<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:1rem 1.25rem;margin-bottom:.75rem">' + content + '</div>';
-}
-
-function renderList(items) {
-  if (!items || !items.length) return '<span style="opacity:.4;font-size:.9rem">None identified</span>';
-  return '<ul style="margin:.25rem 0 0;padding-left:1.25rem">'
-    + items.map(function(i) { return '<li style="margin-bottom:.35rem;font-size:.92rem;opacity:.85">' + esc(String(i)) + '</li>'; }).join('')
-    + '</ul>';
-}
-
-function renderAuditView(r) {
-  var container = document.getElementById('auditContent');
-  if (!container) return;
-
-  var modeStr = r.audit_mode || 'scaffold';
-  var html = '';
-
-  // Header
-  html += '<div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1.5rem;flex-wrap:wrap">'
-    + modeBadge(modeStr)
-    + '<span style="font-size:.85rem;opacity:.5">' + esc(r.confidence_note || '') + '</span>'
-    + '</div>';
-
-  // Scores row
-  html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:.75rem;margin-bottom:1.75rem">';
-  html += '<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:.9rem;text-align:center">'
-    + '<div style="font-size:.7rem;opacity:.4;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.4rem">Headline</div>'
-    + scoreBadge((r.copy && r.copy.headline_score) || 0)
-    + '</div>';
-  html += '<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:.9rem;text-align:center">'
-    + '<div style="font-size:.7rem;opacity:.4;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.4rem">Services</div>'
-    + scoreBadge((r.structure && r.structure.services_clarity_score) || 0)
-    + '</div>';
-  html += '<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:.9rem;text-align:center">'
-    + '<div style="font-size:.7rem;opacity:.4;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.4rem">SEO</div>'
-    + scoreBadge((r.seo && r.seo.seo_score) || 0)
-    + '</div>';
-  html += '<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:.9rem;text-align:center">'
-    + '<div style="font-size:.7rem;opacity:.4;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.4rem">Scaffold fit</div>'
-    + scoreBadge(r.scaffold_alignment_score || 0)
-    + '</div>';
-  html += '</div>';
-
-  // Audience
-  if (r.audience) {
-    html += auditSection('Audience & positioning',
-      auditCard('<strong>Target audience</strong><br><span style="opacity:.8;font-size:.92rem">' + esc(r.audience.target_audience || '') + '</span>')
-      + auditCard('<strong>Value proposition</strong><br><span style="opacity:.8;font-size:.92rem">' + esc(r.audience.value_proposition || '') + '</span>')
-      + (r.audience.messaging_gaps && r.audience.messaging_gaps.length
-        ? auditCard('<strong>Messaging gaps</strong>' + renderList(r.audience.messaging_gaps))
-        : '')
-    );
-  }
-
-  // Priority actions — shown prominently
-  if (r.priority_actions) {
-    var wins = r.priority_actions.quick_wins || [];
-    var fixes = r.priority_actions.long_term_fixes || [];
-
-    var winsHtml = wins.length
-      ? wins.map(function(w) {
-          return auditCard(impactBadge(w.impact)
-            + '<span style="font-size:.85rem;opacity:.5;text-transform:uppercase;letter-spacing:.04em">' + esc(w.scope || '') + '</span>'
-            + '<br><span style="font-size:.93rem">' + esc(w.action || '') + '</span>');
-        }).join('')
-      : '<span style="opacity:.4;font-size:.9rem">None identified</span>';
-
-    var fixesHtml = fixes.length
-      ? fixes.map(function(f) {
-          return auditCard(impactBadge(f.impact)
-            + '<span style="font-size:.85rem;opacity:.5;text-transform:uppercase;letter-spacing:.04em">' + esc(f.scope || '') + '</span>'
-            + '<br><span style="font-size:.93rem">' + esc(f.action || '') + '</span>');
-        }).join('')
-      : '<span style="opacity:.4;font-size:.9rem">None identified</span>';
-
-    html += auditSection('Quick wins', winsHtml);
-    html += auditSection('Long-term fixes', fixesHtml);
-  }
-
-  // Conversion friction
-  if (r.conversion && r.conversion.friction_points && r.conversion.friction_points.length) {
-    html += auditSection('Conversion friction',
-      r.conversion.friction_points.map(function(f) {
-        return auditCard(
-          '<strong>' + esc(f.issue || '') + '</strong>'
-          + (f.location ? ' <span style="opacity:.4;font-size:.85rem">— ' + esc(f.location) + '</span>' : '')
-          + '<br><span style="font-size:.9rem;opacity:.7">' + esc(f.recommendation || '') + '</span>'
-        );
-      }).join('')
-    );
-  }
-
-  // Copy
-  if (r.copy) {
-    html += auditSection('Copy',
-      auditCard('<strong>Headline</strong><br><span style="opacity:.8;font-size:.92rem">' + esc(r.copy.headline_recommendation || '') + '</span>')
-      + (r.copy.copy_issues && r.copy.copy_issues.length
-        ? auditCard('<strong>Copy issues</strong>' + renderList(r.copy.copy_issues))
-        : '')
-      + (r.copy.copy_tone_recommended
-        ? auditCard('<strong>Recommended tone</strong><br><span style="opacity:.8;font-size:.92rem">' + esc(r.copy.copy_tone_recommended) + '</span>')
-        : '')
-    );
-  }
-
-  // Structure
-  if (r.structure) {
-    html += auditSection('Structure & navigation',
-      (r.structure.recommended_nav_structure && r.structure.recommended_nav_structure.length
-        ? auditCard('<strong>Recommended nav</strong>' + renderList(r.structure.recommended_nav_structure))
-        : '')
-      + (r.structure.page_gaps && r.structure.page_gaps.length
-        ? auditCard('<strong>Page gaps</strong>' + renderList(r.structure.page_gaps))
-        : '')
-      + (r.structure.services_clarity_note
-        ? auditCard('<strong>Services clarity note</strong><br><span style="opacity:.8;font-size:.92rem">' + esc(r.structure.services_clarity_note) + '</span>')
-        : '')
-    );
-  }
-
-  // SEO
-  if (r.seo && r.seo.seo_recommendations && r.seo.seo_recommendations.length) {
-    html += auditSection('SEO', auditCard('<strong>Recommendations</strong>' + renderList(r.seo.seo_recommendations)));
-  }
-
-  // Trust signals
-  if (r.trust) {
-    html += auditSection('Trust signals',
-      (r.trust.trust_signals_missing && r.trust.trust_signals_missing.length
-        ? auditCard('<strong>Missing</strong>' + renderList(r.trust.trust_signals_missing))
-        : '')
-      + (r.trust.trust_placement_recommendations && r.trust.trust_placement_recommendations.length
-        ? auditCard('<strong>Placement recommendations</strong>' + renderList(r.trust.trust_placement_recommendations))
-        : '')
-    );
-  }
-
-  // Content strategy
-  if (r.content) {
-    html += auditSection('Content strategy',
-      (r.content.content_pillars && r.content.content_pillars.length
-        ? auditCard('<strong>Content pillars</strong>' + renderList(r.content.content_pillars))
-        : '')
-      + (r.content.suggested_posts && r.content.suggested_posts.length
-        ? auditCard('<strong>Suggested posts</strong>' + renderList(r.content.suggested_posts))
-        : '')
-    );
-  }
-
-  // Objections
-  if (r.objections && r.objections.top_objections && r.objections.top_objections.length) {
-    html += auditSection('Top visitor objections', auditCard(renderList(r.objections.top_objections)));
-  }
-
-  // Cross-reference notes (mode 3 only)
-  if (r.cross_reference_notes) {
-    html += auditSection('Cross-reference notes',
-      auditCard('<span style="opacity:.85;font-size:.92rem">' + esc(r.cross_reference_notes) + '</span>')
-    );
-  }
-
-  container.innerHTML = html;
-}
-
-// ─── SCAFFOLD PREVIEW ─────────────────────────────────────────────────────────
 
 function applyBrand(fileMap, b, scopeData, client) {
   Object.keys(fileMap).forEach(function(fname) {
@@ -1017,7 +642,7 @@ function applyProposalContent(text, b, scopeData, client) {
 function buildHeroEyebrow(scopeData, brandData) {
   var business = esc(scopeData.businessName || '');
   var industry = scopeData.industry === 'fitness' ? 'ONLINE FITNESS COACHING' : (scopeData.projectType || 'CUSTOM WEBSITE');
-  return business ? business.toUpperCase() + ' \u2022 ' + industry : industry;
+  return business ? business.toUpperCase() + ' • ' + industry : industry;
 }
 
 function buildHeroHeadline(scopeData, brandData, client) {
@@ -1193,8 +818,6 @@ function buildContactOptions(scopeData, brandData) {
   return '<select required><option value="">I&apos;m interested in...</option>' + options + '<option>General Enquiry</option></select>';
 }
 
-// ─── SCAFFOLD BUILDERS ────────────────────────────────────────────────────────
-
 function buildFallback(type, client, industry) {
   if (type.indexOf('Native') !== -1) return buildAppScaffold(client);
   if (type.indexOf('Backend') !== -1) return buildBackendScaffold(client);
@@ -1265,8 +888,6 @@ function buildAppScaffold(c) {
   };
 }
 
-// ─── FILE PREVIEW ─────────────────────────────────────────────────────────────
-
 function renderTree(f) {
   var names = Object.keys(f);
   var dirs = [];
@@ -1303,8 +924,6 @@ function showFile(k) {
   document.getElementById('codeBox').textContent = files[k] || '';
 }
 
-// ─── DOWNLOAD ─────────────────────────────────────────────────────────────────
-
 async function doZip() {
   if (!Object.keys(files).length) {
     alert('Generate a scaffold before downloading the zip.');
@@ -1315,11 +934,6 @@ async function doZip() {
   setButtonState('downloadBtn', true, 'Preparing zip...');
 
   try {
-    // Include audit report in zip if available
-    if (auditReport) {
-      files['audit-report.json'] = JSON.stringify(auditReport, null, 2);
-    }
-
     var zip = new JSZip();
     Object.keys(files).forEach(function(name) { zip.file(name, files[name]); });
     var blob = await zip.generateAsync({ type: 'blob' });
@@ -1350,14 +964,11 @@ async function doZip() {
   }
 }
 
-// ─── RESET ────────────────────────────────────────────────────────────────────
-
 function doReset() {
   sel = null;
   scope = null;
   files = {};
   brand = {};
-  auditReport = null;
 
   var area = document.getElementById('emailPaste');
   if (area) area.value = '';
@@ -1376,9 +987,6 @@ function doReset() {
   if (tabs) tabs.innerHTML = '';
   var code = document.getElementById('codeBox');
   if (code) code.textContent = '';
-
-  var auditContent = document.getElementById('auditContent');
-  if (auditContent) auditContent.innerHTML = '';
 
   ['bTagline', 'bAbout', 'bPhone', 'bEmail', 'bInstagram', 'bFacebook', 'bTikTok', 'bLogo', 'bHeroKeyword'].forEach(function(id) {
     var el = document.getElementById(id);
@@ -1402,8 +1010,6 @@ function doReset() {
   setButtonState('downloadBtn', false, 'Download zip');
   goTo(1);
 }
-
-// ─── COLOUR PICKER ────────────────────────────────────────────────────────────
 
 var _brightness = 1;
 var _wheelDrawn = false;
@@ -1484,7 +1090,9 @@ function updateSwatch(hex) {
 }
 
 function hslToRgb(h, s, l) {
-  var r, g, b;
+  var r;
+  var g;
+  var b;
   if (s === 0) {
     r = g = b = l;
   } else {
@@ -1504,8 +1112,6 @@ function hslToRgb(h, s, l) {
   }
   return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
 }
-
-// ─── INIT ─────────────────────────────────────────────────────────────────────
 
 window.addEventListener('DOMContentLoaded', function() {
   initPasteView();
