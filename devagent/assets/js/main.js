@@ -548,7 +548,7 @@ async function doScaffold() {
   var industry = (scope && scope.industry) || 'generic';
 
   files = buildFallback(type, client, industry);
-  files = applyBrand(files, brand, client);
+  files = applyBrand(files, brand, scope, client);
 
   renderTree(files);
   var keys = Object.keys(files);
@@ -556,7 +556,7 @@ async function doScaffold() {
   if (keys.length) showFile(keys[0]);
 }
 
-function applyBrand(fileMap, b, client) {
+function applyBrand(fileMap, b, scopeData, client) {
   Object.keys(fileMap).forEach(function(fname) {
     var text = fileMap[fname];
 
@@ -576,6 +576,7 @@ function applyBrand(fileMap, b, client) {
       if (b.phone) text = text.replace(/\+44 28 9[0-9 ]+/g, b.phone);
       if (b.email) text = text.replace(/hello@[a-z0-9.\-]+\.co\.uk/g, b.email);
       if (b.hero) text = text.replace(/assets\/images\/[a-z]+\.jpg/g, 'assets/images/' + b.hero.toLowerCase().replace(/\s+/g, '-') + '.jpg');
+      text = applyProposalContent(text, b, scopeData, client);
 
       var socials = '';
       if (b.instagram) socials += '<a href="' + b.instagram + '" target="_blank" style="color:rgba(255,255,255,.5)">Instagram</a>';
@@ -592,6 +593,186 @@ function applyBrand(fileMap, b, client) {
     fileMap[fname] = text;
   });
   return fileMap;
+}
+
+function applyProposalContent(text, b, scopeData, client) {
+  if (!scopeData || !text) return text;
+
+  var featureCards = buildFeatureCards(scopeData, b, 0, 3);
+  var aboutSection = buildAboutSection(scopeData, b);
+  var benefitCards = buildBenefitCards(scopeData, b);
+  var contactOptions = buildContactOptions(scopeData, b);
+  var heroEyebrow = buildHeroEyebrow(scopeData, b);
+  var heroHeadline = buildHeroHeadline(scopeData, b, client);
+  var heroCopy = esc(b.tagline || b.about || 'A custom website tailored to your business goals.');
+
+  text = text.replace(/Northern Ireland's #1 PT/g, heroEyebrow);
+  text = text.replace(/<h1>[\s\S]*?<\/h1>/, '<h1>' + heroHeadline + '</h1>');
+  text = text.replace(/<p>Your tagline goes here\.<\/p>/, '<p>' + heroCopy + '</p>');
+  text = text.replace(/Start Your Journey/g, 'Book A Consultation');
+  text = text.replace(/See Results/g, 'Explore More');
+
+  if (featureCards) {
+    text = text.replace(/<p class="section-tag" style="text-align:center">What I Offer<\/p>/, '<p class="section-tag" style="text-align:center">Highlights</p>');
+    text = text.replace(/<h2 style="text-align:center;margin-bottom:3rem">Training Programmes<\/h2>/, '<h2 style="text-align:center;margin-bottom:3rem">Built Around Your Goals</h2>');
+    text = text.replace(/<div class="grid-3">[\s\S]*?<\/div>\s*<\/div><\/section>/, featureCards + '\n  </div></section>');
+  }
+
+  if (aboutSection) {
+    text = text.replace(/<p class="section-tag" style="text-align:center">Schedule<\/p>/, '<p class="section-tag" style="text-align:center">About</p>');
+    text = text.replace(/<h2 style="text-align:center;margin-bottom:2.5rem">Weekly Timetable<\/h2>/, '<h2 style="text-align:center;margin-bottom:2.5rem">A Personal Approach</h2>');
+    text = text.replace(/<div style="overflow-x:auto" data-anim>[\s\S]*?<\/div>\s*<\/div><\/section>/, aboutSection + '\n  </div></section>');
+  }
+
+  if (benefitCards) {
+    text = text.replace(/<p class="section-tag" style="text-align:center">Transformations<\/p>/, '<p class="section-tag" style="text-align:center">Why Choose Us</p>');
+    text = text.replace(/<h2 style="text-align:center;margin-bottom:2.5rem">Real Results<\/h2>/, '<h2 style="text-align:center;margin-bottom:2.5rem">Support That Keeps You Moving</h2>');
+    text = text.replace(/<div class="grid-3">\s*<div class="testimonial"[\s\S]*?<\/div>\s*<\/div><\/section>/, benefitCards + '\n  </div></section>');
+  }
+
+  text = text.replace(/<h2 style="color:#fff;text-align:center;margin-bottom:.75rem">Free Consultation<\/h2>/, '<h2 style="color:#fff;text-align:center;margin-bottom:.75rem">Book A Consultation</h2>');
+  text = text.replace(/No commitment &mdash; just a 30-minute chat about your goals\./, 'Tell us about your goals and we&apos;ll help you take the next step with confidence.');
+  text = text.replace(/<select required><option value="">I&apos;m interested in\.\.\.<\/option>[\s\S]*?<\/select>/, contactOptions);
+  text = text.replace(/Tell me about your goals\.\.\./, 'Tell me about your goals...');
+  text = text.replace(/Book Free Consultation/g, 'Book A Consultation');
+
+  return text;
+}
+
+function buildHeroEyebrow(scopeData, brandData) {
+  var business = esc(scopeData.businessName || '');
+  var industry = scopeData.industry === 'fitness' ? 'ONLINE FITNESS COACHING' : (scopeData.projectType || 'CUSTOM WEBSITE');
+  return business ? business.toUpperCase() + ' • ' + industry : industry;
+}
+
+function buildHeroHeadline(scopeData, brandData, client) {
+  var source = cleanValue((brandData && brandData.tagline) || '');
+  if (/strongest life/i.test(source)) return 'LIVE YOUR<br>STRONGEST LIFE.';
+  if (/results/i.test(source)) return 'BUILD A BRAND<br>THAT CONVERTS.';
+  var business = cleanValue(scopeData.businessName || client || '');
+  if (business) return esc(business.toUpperCase().replace(/\s+/g, ' '));
+  return 'CUSTOM WEBSITE.<br>CLEAR RESULTS.';
+}
+
+function buildFeatureItems(features) {
+  return (features || []).map(function(item) {
+    var cleaned = cleanValue(item);
+    if (!cleaned) return null;
+    var parts = cleaned.split(':');
+    var title = cleanValue(parts[0] || 'Feature');
+    var body = cleanValue(parts.slice(1).join(':')) || 'Tailored to the project scope and business goals.';
+    return { title: title, body: body };
+  }).filter(Boolean);
+}
+
+function buildFeatureCards(scopeData, brandData, start, count) {
+  var items = scopeData && scopeData.industry === 'fitness'
+    ? buildFitnessServiceItems(scopeData, brandData).slice(start, start + count)
+    : buildFeatureItems((scopeData && scopeData.features) || []).slice(start, start + count);
+  if (!items.length) return '';
+  return '<div class="grid-3">\n' + items.map(function(item, index) {
+    var accent = item.meta ? '<p style="font-weight:700;color:var(--accent);margin-top:1rem">' + esc(item.meta) + '</p>' : '';
+    return '      <div class="card" data-anim' + (index ? ' data-anim-delay="' + index + '"' : '') + '><div class="card-icon">' + item.icon + '</div><h3>' + esc(item.title) + '</h3><p style="color:var(--muted);font-size:.9rem;margin-bottom:0">' + esc(item.body) + '</p>' + accent + '</div>';
+  }).join('\n') + '\n    </div>';
+}
+
+function buildFitnessServiceItems(scopeData, brandData) {
+  var featureText = ((scopeData && scopeData.features) || []).join(' ').toLowerCase();
+  var items = [
+    {
+      icon: '&#127947;',
+      title: 'Personal Coaching',
+      body: featureText.indexOf('book') !== -1
+        ? 'Flexible coaching sessions designed around your lifestyle, schedule, and goals.'
+        : 'One-to-one guidance built to help you train with clarity, structure, and confidence.',
+      meta: 'Tailored support'
+    },
+    {
+      icon: '&#128640;',
+      title: 'Results-Focused Programmes',
+      body: featureText.indexOf('results') !== -1
+        ? 'Clear training pathways, visible progress, and accountability that keeps momentum high.'
+        : 'Structured plans created to help clients stay consistent and move toward meaningful results.',
+      meta: 'Built for progress'
+    },
+    {
+      icon: '&#128101;',
+      title: 'Supportive Community',
+      body: featureText.indexOf('community') !== -1 || featureText.indexOf('sales funnel') !== -1
+        ? 'A welcoming client journey that encourages commitment, motivation, and long-term progress.'
+        : 'An encouraging experience that helps clients feel supported from their first enquiry onward.',
+      meta: 'Confidence and consistency'
+    }
+  ];
+
+  var business = cleanValue((scopeData && scopeData.businessName) || '');
+  if (business) {
+    items[0].body = business + ' offers a more personal route to coaching, built around real life and sustainable progress.';
+  }
+
+  var tagline = cleanValue((brandData && brandData.tagline) || '');
+  if (tagline) {
+    items[2].body = tagline + '. Every touchpoint is shaped to feel motivating, clear, and approachable.';
+  }
+
+  return items;
+}
+
+function buildAboutSection(scopeData, brandData) {
+  var about = esc((brandData && brandData.about) || '');
+  if (!about) return '';
+  var pillars = buildBenefitItems(scopeData, brandData).slice(0, 3);
+  if (!pillars.length) {
+    pillars = [{ title: 'Tailored Support', body: 'A client-first experience built around clear guidance, confidence, and momentum.' }];
+  }
+  return '<div class="grid-2" style="align-items:start;gap:2rem">\n'
+    + '      <div data-anim><p style="font-size:1rem;line-height:1.9;color:var(--muted);max-width:520px">' + about + '</p></div>\n'
+    + '      <div class="grid-2">' + pillars.map(function(item, index) {
+      return '<div class="card" data-anim' + (index ? ' data-anim-delay="' + index + '"' : '') + '><h3>' + esc(item.title) + '</h3><p style="color:var(--muted);font-size:.92rem;margin-bottom:0">' + esc(item.body) + '</p></div>';
+    }).join('') + '</div>\n'
+    + '    </div>';
+}
+
+function buildBenefitItems(scopeData, brandData) {
+  var items = [];
+  var tagline = cleanValue((brandData && brandData.tagline) || '');
+  if (tagline) {
+    items.push({ title: 'Personal Support', body: tagline });
+  }
+  if ((scopeData.features || []).length) {
+    var featureItems = buildFeatureItems(scopeData.features).slice(0, 2);
+    featureItems.forEach(function(item) {
+      items.push({ title: item.title, body: item.body });
+    });
+  }
+  if (scopeData.industry === 'fitness') {
+    items.push({ title: 'Sustainable Progress', body: 'Designed to help clients stay consistent, confident, and focused on meaningful results.' });
+  }
+  return items.slice(0, 3);
+}
+
+function buildBenefitCards(scopeData, brandData) {
+  var items = buildBenefitItems(scopeData, brandData);
+  if (!items.length) return '';
+  return '<div class="grid-3">\n' + items.map(function(item, index) {
+    return '      <div class="card" data-anim' + (index ? ' data-anim-delay="' + index + '"' : '') + '><div class="card-icon">&#10022;</div><h3>' + esc(item.title) + '</h3><p style="color:var(--muted);font-size:.92rem;margin-bottom:0">' + esc(item.body) + '</p></div>';
+  }).join('\n') + '\n    </div>';
+}
+
+function buildContactOptions(scopeData, brandData) {
+  var items = [];
+  if (scopeData.industry === 'fitness') {
+    items = ['1-to-1 Coaching', 'Online Coaching', 'Results Support'];
+  } else {
+    items = buildFeatureItems(scopeData.features).slice(0, 3).map(function(item) { return item.title; });
+  }
+  var options = items.map(function(item) {
+    return '<option>' + esc(item) + '</option>';
+  }).join('');
+  if (!options) {
+    options = '<option>General Enquiry</option><option>Consultation</option>';
+  }
+  return '<select required><option value="">I&apos;m interested in...</option>' + options + '<option>General Enquiry</option></select>';
 }
 
 function buildFallback(type, client, industry) {
