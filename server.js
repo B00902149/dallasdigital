@@ -21,7 +21,9 @@ const PORT = process.env.PORT || 3000;
 
 // ── Middleware ───────────────────────────────────────────────
 app.use(cors());
-app.use(express.json());
+// Increased from default 100kb to 2mb — required for the DevAgent
+// audit agent which sends a larger system prompt + JSON payload.
+app.use(express.json({ limit: '2mb' }));
 
 // ── Serve static site from project root ─────────────────────
 app.use(express.static(path.join(__dirname)));
@@ -42,7 +44,10 @@ sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 // ============================================================
 // ROUTE: POST /api/claude
-// Existing Groq proxy — unchanged
+// Groq proxy — used by both the parse agent and the audit agent.
+// max_tokens is passed through from the client; the audit agent
+// requests 4000 to fit the full JSON audit report in one response.
+// Groq llama-3.3-70b-versatile supports up to 6000 output tokens.
 // ============================================================
 app.post('/api/claude', async (req, res) => {
   try {
@@ -62,7 +67,9 @@ app.post('/api/claude', async (req, res) => {
       body: JSON.stringify({
         model:       'llama-3.3-70b-versatile',
         messages:    groqMessages,
-        max_tokens:  max_tokens || 1000,
+        // Honour client-requested max_tokens (audit needs 4000).
+        // Cap at 6000 — the model's output limit on free tier.
+        max_tokens:  Math.min(max_tokens || 1000, 6000),
         temperature: 0.7
       })
     });
@@ -74,7 +81,7 @@ app.post('/api/claude', async (req, res) => {
       return res.status(response.status).json({ error: data.error?.message || 'Groq API error' });
     }
 
-    // Normalise to Anthropic response shape → Main.js unchanged
+    // Normalise to Anthropic response shape → main.js unchanged
     res.json({
       content: [
         { type: 'text', text: data.choices?.[0]?.message?.content || '' }
@@ -281,7 +288,7 @@ Use **bold** for section headings. Reference their business name and industry wh
 // ============================================================
 // ROUTE: GET /api/approve/:token
 // Adrian clicks Approve in his email.
-// Sends the AI-generated quote to the customer via Nodemailer.
+// Sends the AI-generated quote to the customer via SendGrid.
 // ============================================================
 app.get('/api/approve/:token', async (req, res) => {
   const { token } = req.params;
@@ -615,7 +622,7 @@ app.listen(PORT, async () => {
   console.log(`   Model:     llama-3.3-70b-versatile`);
   console.log(`   Free tier: 14,400 requests/day`);
   console.log(`\n   Routes:`);
-  console.log(`   POST /api/claude          → Groq proxy (AI demo + chatbot)`);
+  console.log(`   POST /api/claude          → Groq proxy (DevAgent parse + audit)`);
   console.log(`   POST /api/quote-request   → Generate & email quote for approval`);
   console.log(`   GET  /api/approve/:token  → Approve & send quote to customer`);
   console.log(`   GET  /devagent            → DevAgent Build Agent`);
