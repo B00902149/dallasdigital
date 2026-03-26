@@ -21,7 +21,9 @@
     <span class="pip-arrow">&#8250;</span>
     <div class="pip-step" id="p3">Brand &amp; content</div>
     <span class="pip-arrow">&#8250;</span>
-    <div class="pip-step" id="p4">Download zip</div>
+    <div class="pip-step" id="p4">Scaffold</div>
+    <span class="pip-arrow">&#8250;</span>
+    <div class="pip-step" id="p5">Audit</div>
   </div>
 
   <!-- ── Step 1: Paste email ─────────────────────────────── -->
@@ -158,7 +160,7 @@ Nicole"
     </div>
   </div>
 
-  <!-- ── Step 4: Scaffold preview + download ─────────────── -->
+  <!-- ── Step 4: Scaffold preview ────────────────────────── -->
   <div id="v4" class="view">
     <div class="card">
       <div class="lbl">File structure</div>
@@ -170,8 +172,26 @@ Nicole"
       <div class="code" id="codeBox"></div>
     </div>
     <div class="arow" id="downloadActions">
-      <button class="btn btn-p" id="downloadBtn" onclick="doZip()">Download zip</button>
+      <button class="btn btn-p" id="auditBtn" onclick="goTo(5)">View audit &#8250;</button>
       <button class="btn btn-sm" onclick="goTo(3)">&#8249; Back</button>
+    </div>
+  </div>
+
+  <!-- ── Step 5: Audit report ─────────────────────────────── -->
+  <div id="v5" class="view">
+    <div class="card">
+      <div class="lbl">Website audit</div>
+      <p style="font-size:13px;color:rgba(255,255,255,.4);margin-bottom:1.5rem;line-height:1.6">
+        AI-generated audit based on the client scaffold
+        and proposal brief. Included as <code style="font-size:11px;background:rgba(255,255,255,.08);padding:1px 6px;border-radius:4px">audit-report.json</code> in the zip.
+      </p>
+      <div id="auditContent">
+        <div class="sbar"><div class="spin"></div>&nbsp;Audit will appear here once the scaffold is generated.</div>
+      </div>
+    </div>
+    <div class="arow">
+      <button class="btn btn-p" onclick="doZip()">Download zip &#8250;</button>
+      <button class="btn btn-sm" onclick="goTo(4)">&#8249; Back to scaffold</button>
     </div>
   </div>
 

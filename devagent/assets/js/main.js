@@ -4,10 +4,107 @@ var sel = null;
 var scope = null;
 var files = {};
 var brand = {};
-var WORKFLOW_STEPS = 4;
+var auditReport = null;
+var WORKFLOW_STEPS = 5;
 
 // Routes through the existing Railway proxy.
 var API_BASE = window.location.origin;
+
+// ─── AUDIT AGENT SYSTEM PROMPT ───────────────────────────────────────────────
+
+var AUDIT_SYSTEM_PROMPT = [
+  'You are a website audit agent operating inside a multi-agent development workflow.',
+  'You receive structured output from a dev agent (JSON payload, scaffold summary, and optionally a live client URL).',
+  'Your job is to audit the client\'s web presence and return a structured JSON report.',
+  'The dev agent will use your output to enrich the project scaffold.',
+  '',
+  'AUDIT MODE DETECTION:',
+  'Determine your mode from the input before running any steps.',
+  '',
+  'MODE "cross_reference": client_url is present AND scaffold data is provided.',
+  'Audit the live site AND the scaffold, cross-referenced against the proposal brief.',
+  'Identify alignment and conflicts between all three sources.',
+  '',
+  'MODE "live": client_url is present, no scaffold data.',
+  'Run full audit against the live site only.',
+  '',
+  'MODE "scaffold": client_url is null or absent, scaffold data is provided.',
+  'Audit the scaffold structure and proposal content only.',
+  'All recommendations are forward-looking — what should be built, not what needs fixing.',
+  '',
+  'AUDIT STEPS (run all applicable steps for your mode):',
+  '1. Audience & positioning — target audience, value proposition, messaging gaps.',
+  '2. Conversion friction — top 3 friction points blocking conversions with specific recommendations.',
+  '3. Headline & copy quality — score 1-10, specific recommendation.',
+  '4. Page & copy structure — scannability, benefit-led structure, CTA clarity.',
+  '5. Services / offering clarity — score 1-10, note on clarity.',
+  '6. Navigation & IA — recommended nav structure as ordered array, page gaps.',
+  '7. SEO signals — score 1-10, specific actionable recommendations.',
+  '8. Content strategy — 3 content pillars, up to 6 suggested post titles.',
+  '9. FAQ & objection handling — top objections a visitor would have before converting.',
+  '10. Trust signals — what is present, what is missing, placement recommendations.',
+  '11. Priority action plan — up to 5 quick wins (within build scope) and up to 5 long-term fixes, ranked by impact.',
+  '',
+  'OUTPUT RULES:',
+  'Return ONLY a single valid JSON object. No prose, no markdown, no code fences.',
+  'Never hallucinate URL content. If client_url is inaccessible, fall back to scaffold mode and note it in confidence_note.',
+  'Be specific — every recommendation must reference a page, section, or element.',
+  'Score conservatively — 8-10 should be rare. Most real sites score 4-7.',
+  'All array fields return [] not null when empty.',
+  '',
+  'JSON SCHEMA (return exactly this structure):',
+  '{',
+  '  "audit_mode": "live | scaffold | cross_reference",',
+  '  "confidence_note": "string",',
+  '  "client_name": "string",',
+  '  "company_name": "string",',
+  '  "audience": {',
+  '    "target_audience": "string",',
+  '    "value_proposition": "string",',
+  '    "messaging_gaps": ["string"]',
+  '  },',
+  '  "conversion": {',
+  '    "friction_points": [{ "issue": "string", "location": "string", "recommendation": "string" }]',
+  '  },',
+  '  "copy": {',
+  '    "headline_score": 0,',
+  '    "headline_recommendation": "string",',
+  '    "copy_issues": ["string"],',
+  '    "copy_tone_recommended": "string"',
+  '  },',
+  '  "structure": {',
+  '    "services_clarity_score": 0,',
+  '    "services_clarity_note": "string",',
+  '    "recommended_nav_structure": ["string"],',
+  '    "page_gaps": ["string"]',
+  '  },',
+  '  "seo": {',
+  '    "seo_score": 0,',
+  '    "seo_recommendations": ["string"]',
+  '  },',
+  '  "content": {',
+  '    "content_pillars": ["string"],',
+  '    "suggested_posts": ["string"]',
+  '  },',
+  '  "objections": {',
+  '    "top_objections": ["string"]',
+  '  },',
+  '  "trust": {',
+  '    "trust_signals_present": ["string"],',
+  '    "trust_signals_missing": ["string"],',
+  '    "trust_placement_recommendations": ["string"]',
+  '  },',
+  '  "cross_reference_notes": "string | null",',
+  '  "priority_actions": {',
+  '    "quick_wins": [{ "action": "string", "impact": "high | medium | low", "scope": "string" }],',
+  '    "long_term_fixes": [{ "action": "string", "impact": "high | medium | low", "scope": "string" }]',
+  '  },',
+  '  "recommended_pages": ["string"],',
+  '  "scaffold_alignment_score": 0',
+  '}'
+].join('\n');
+
+// ─── PIP / NAVIGATION ─────────────────────────────────────────────────────────
 
 function pip(n, completed) {
   var step = Math.max(1, Math.min(WORKFLOW_STEPS, n || 1));
@@ -45,6 +142,8 @@ function setHidden(id, hidden) {
   el.classList.toggle('is-hidden', !!hidden);
 }
 
+// ─── AI CALL ──────────────────────────────────────────────────────────────────
+
 async function aiCall(messages, system) {
   var res = await fetch(API_BASE + '/api/claude', {
     method: 'POST',
@@ -55,6 +154,8 @@ async function aiCall(messages, system) {
   if (data.error) throw new Error(data.error);
   return (data.content || []).map(function(b) { return b.text || ''; }).filter(Boolean).join('\n');
 }
+
+// ─── PARSE VIEW ───────────────────────────────────────────────────────────────
 
 function initPasteView() {
   var btn = document.getElementById('parseBtn');
@@ -108,7 +209,8 @@ async function parseEmail() {
       + '  "facebook": "facebook URL if mentioned",\n'
       + '  "tiktok": "tiktok URL if mentioned",\n'
       + '  "logo": "logo URL if mentioned",\n'
-      + '  "hero": "1-2 word image keyword matching the industry e.g. restaurant, flowers, gym"\n'
+      + '  "hero": "1-2 word image keyword matching the industry e.g. restaurant, flowers, gym",\n'
+      + '  "clientUrl": "existing website URL if mentioned, empty string if not"\n'
       + '}'
     );
 
@@ -155,6 +257,8 @@ async function parseEmail() {
   goTo(2);
 }
 
+// ─── SCOPE SUMMARY ────────────────────────────────────────────────────────────
+
 function renderScopeSummary(s) {
   var el = document.getElementById('scopeSummary');
   if (!el) return;
@@ -162,6 +266,10 @@ function renderScopeSummary(s) {
   var features = (s.features || []).map(function(f) { return '&#8226; ' + esc(f); }).join('<br>');
   var timeline = esc(s.timeline || 'TBC');
   var timelineCompact = esc(compactTimeline(s.timeline || 'TBC'));
+  var clientUrlDisplay = s.clientUrl
+    ? '<a href="' + esc(s.clientUrl) + '" target="_blank" style="color:var(--accent)">' + esc(s.clientUrl) + '</a>'
+    : '<span style="opacity:.5">None — new build</span>';
+
   el.style.display = 'grid';
   el.innerHTML =
       '<div class="sitem"><div class="skey">Client</div><div class="sval">' + esc(s.clientName || '-') + '</div></div>'
@@ -170,6 +278,7 @@ function renderScopeSummary(s) {
     + '<div class="sitem"><div class="skey">Industry</div><div class="sval">' + esc(s.industry || '-') + '</div></div>'
     + '<div class="sitem"><div class="skey">Budget</div><div class="sval">' + esc(s.budget || 'TBC') + '</div></div>'
     + '<div class="sitem"><div class="skey">Timeline</div><div class="sval">' + timelineCompact + '</div><div class="smeta">' + timeline + '</div></div>'
+    + '<div class="sitem" style="grid-column:1/-1"><div class="skey">Existing site</div><div class="sval">' + clientUrlDisplay + '</div></div>'
     + '<div class="sitem" style="grid-column:1/-1"><div class="skey">Stack</div><div class="sval">' + esc(stack || 'TBC') + '</div></div>'
     + '<div class="sitem" style="grid-column:1/-1"><div class="skey">Features</div>'
     +   '<div class="sval stext-list">'
@@ -182,6 +291,8 @@ function renderScopeSummary(s) {
     +     '<option value="Full-Stack"' + (s.projectType === 'Full-Stack' ? ' selected' : '') + '>Full-Stack (Web + Backend)</option>'
     +   '</select></div>';
 }
+
+// ─── PARSING HELPERS ──────────────────────────────────────────────────────────
 
 function compactTimeline(value) {
   var text = cleanValue(value);
@@ -196,6 +307,16 @@ function compactTimeline(value) {
 function extractEmail(text) {
   var m = text.match(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/);
   return m ? m[0] : '';
+}
+
+function extractClientUrl(text) {
+  // Look for explicit "website" or "existing" URL mentions first
+  var explicit = text.match(/(?:existing (?:website|site)|current (?:website|site)|website)[:\s]+?(https?:\/\/[^\s,\n"'<>]+)/i);
+  if (explicit) return cleanValue(explicit[1]);
+  // Fall back to any URL that looks like a business website (not social)
+  var urls = text.match(/https?:\/\/(?!(?:www\.)?(?:instagram|facebook|tiktok|twitter|linkedin|youtube)\.)[^\s,\n"'<>]+/g);
+  if (urls && urls.length) return cleanValue(urls[0]);
+  return '';
 }
 
 function cleanValue(value) {
@@ -247,10 +368,8 @@ function extractGreetingName(text) {
 function extractName(text) {
   var greeting = extractGreetingName(text);
   if (greeting && !isSuspiciousName(greeting)) return greeting;
-
   var fromMatch = text.match(/(?:from|regards|cheers|thanks|best regards|kind regards|best)[,:\s]+([A-Z][a-z]+(?: [A-Z][a-z]+){0,2})/i);
   if (fromMatch && !isSuspiciousName(fromMatch[1])) return cleanValue(fromMatch[1]);
-
   return 'Client';
 }
 
@@ -428,6 +547,9 @@ function normalizeParsedProposal(parsed, text) {
   var budget = cleanValue(parsed.budget) || extractBudget(text) || 'TBC';
   var clientEmail = cleanValue(parsed.clientEmail) || extractEmail(text);
 
+  // clientUrl: prefer AI-parsed value, fall back to regex extraction from raw text
+  var clientUrl = cleanValue(parsed.clientUrl) || extractClientUrl(text);
+
   var brandData = {
     tagline: cleanValue(parsed.tagline) || inferTagline(businessName, industry),
     about: cleanValue(parsed.about) || inferAbout(text, businessName || clientName, industry),
@@ -449,7 +571,8 @@ function normalizeParsedProposal(parsed, text) {
       stack: stack,
       features: features,
       timeline: timeline,
-      budget: budget
+      budget: budget,
+      clientUrl: clientUrl
     },
     brand: brandData
   };
@@ -458,6 +581,8 @@ function normalizeParsedProposal(parsed, text) {
 function localGuessScope(text) {
   return normalizeParsedProposal({}, text).scope;
 }
+
+// ─── BRAND VIEW ───────────────────────────────────────────────────────────────
 
 function goToBrand() {
   if (!scope) {
@@ -515,6 +640,8 @@ function validateBrand(b) {
   return missing;
 }
 
+// ─── SCAFFOLD ─────────────────────────────────────────────────────────────────
+
 async function doBrandedScaffold() {
   if (!scope) {
     alert('Please parse a proposal before generating a scaffold.');
@@ -554,7 +681,303 @@ async function doScaffold() {
   var keys = Object.keys(files);
   renderTabs(keys);
   if (keys.length) showFile(keys[0]);
+
+  // Kick off audit agent after scaffold is ready — non-blocking render
+  runAudit();
 }
+
+// ─── AUDIT AGENT ─────────────────────────────────────────────────────────────
+
+function buildAuditPayload() {
+  var scaffoldPages = Object.keys(files)
+    .filter(function(f) { return f.indexOf('.html') !== -1; })
+    .map(function(f) { return f.replace(/\//g, ' / '); });
+
+  var scaffoldSummary = [
+    'Project type: ' + (scope.projectType || 'Bespoke Website'),
+    'Files generated: ' + Object.keys(files).join(', '),
+    'Pages: ' + (scaffoldPages.join(', ') || 'index.html'),
+    'Features: ' + (scope.features || []).join(', '),
+    'Stack: ' + (scope.stack || []).join(', ')
+  ].join('\n');
+
+  return {
+    client_name: scope.clientName || '',
+    company_name: scope.businessName || '',
+    industry: scope.industry || '',
+    project_type: scope.projectType || '',
+    deliverables: scope.features || [],
+    pages_required: scaffoldPages,
+    features: scope.features || [],
+    tech_stack: (scope.stack || []).join(', '),
+    timeline: scope.timeline || '',
+    deadline: '',
+    budget_range: scope.budget || '',
+    pain_points: [],
+    goals_stated: brand.tagline ? [brand.tagline] : [],
+    copy_tone: brand.tagline || '',
+    client_url: scope.clientUrl || null,
+    competitor_urls: [],
+    inspiration_urls: [],
+    scaffold_summary: scaffoldSummary,
+    scaffold_pages: scaffoldPages,
+    proposal_markdown: (sel && sel.rawText) ? sel.rawText.slice(0, 2000) : null
+  };
+}
+
+function detectAuditMode(payload) {
+  var hasUrl = payload.client_url && payload.client_url.length > 0;
+  var hasScaffold = payload.scaffold_pages && payload.scaffold_pages.length > 0;
+  if (hasUrl && hasScaffold) return 'cross_reference';
+  if (hasUrl) return 'live';
+  return 'scaffold';
+}
+
+async function runAudit() {
+  auditReport = null;
+  var auditBtn = document.getElementById('auditBtn');
+  if (auditBtn) {
+    auditBtn.disabled = true;
+    auditBtn.textContent = 'Running audit...';
+  }
+
+  // Show v5 in loading state immediately
+  renderAuditLoading();
+
+  var payload = buildAuditPayload();
+  var mode = detectAuditMode(payload);
+
+  var userMessage = 'You are the website audit agent. Run in mode: ' + mode + '.\n\n'
+    + 'Here is the dev agent output for this project:\n\n'
+    + JSON.stringify(payload, null, 2)
+    + '\n\nRun your full audit and return the structured JSON report only.';
+
+  try {
+    var raw = await aiCall(
+      [{ role: 'user', content: userMessage }],
+      AUDIT_SYSTEM_PROMPT
+    );
+
+    var parsed = JSON.parse(raw.replace(/```json|```/g, '').trim());
+    auditReport = parsed;
+    renderAuditView(auditReport);
+  } catch (e) {
+    renderAuditError(e.message || 'Audit failed. Check the console for details.');
+  } finally {
+    if (auditBtn) {
+      auditBtn.disabled = false;
+      auditBtn.textContent = 'View audit \u203a';
+    }
+  }
+}
+
+// ─── AUDIT VIEW RENDERING ─────────────────────────────────────────────────────
+
+function renderAuditLoading() {
+  var container = document.getElementById('auditContent');
+  if (!container) return;
+  container.innerHTML = '<div class="sbar" style="margin:2rem 0"><div class="spin"></div>&nbsp;Running website audit...</div>';
+}
+
+function renderAuditError(msg) {
+  var container = document.getElementById('auditContent');
+  if (!container) return;
+  container.innerHTML = '<div style="color:#e74c3c;padding:1.5rem;border:1px solid rgba(231,76,60,.3);border-radius:8px;margin:1rem 0">'
+    + '<strong>Audit error</strong><br><span style="opacity:.7;font-size:.9rem">' + esc(msg) + '</span>'
+    + '</div>';
+}
+
+function scoreBadge(score) {
+  var colour = score >= 7 ? '#27ae60' : score >= 4 ? '#f39c12' : '#e74c3c';
+  return '<span style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:.8rem;font-weight:600;background:' + colour + '22;color:' + colour + ';border:1px solid ' + colour + '44">' + score + '/10</span>';
+}
+
+function impactBadge(impact) {
+  var colour = impact === 'high' ? '#e74c3c' : impact === 'medium' ? '#f39c12' : '#888';
+  return '<span style="display:inline-block;padding:1px 8px;border-radius:20px;font-size:.75rem;font-weight:600;background:' + colour + '22;color:' + colour + ';border:1px solid ' + colour + '33;text-transform:uppercase;margin-right:6px">' + impact + '</span>';
+}
+
+function modeBadge(mode) {
+  var labels = { live: 'Live site', scaffold: 'Scaffold only', cross_reference: 'Cross-reference' };
+  var colours = { live: '#27ae60', scaffold: '#534AB7', cross_reference: '#e67e22' };
+  var label = labels[mode] || mode;
+  var colour = colours[mode] || '#888';
+  return '<span style="display:inline-block;padding:3px 12px;border-radius:20px;font-size:.8rem;font-weight:600;background:' + colour + '22;color:' + colour + ';border:1px solid ' + colour + '44">' + label + '</span>';
+}
+
+function auditSection(title, content) {
+  return '<div class="audit-section" style="margin-bottom:1.75rem">'
+    + '<h3 style="font-size:.75rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;opacity:.4;margin:0 0 .75rem">' + esc(title) + '</h3>'
+    + content
+    + '</div>';
+}
+
+function auditCard(content) {
+  return '<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:1rem 1.25rem;margin-bottom:.75rem">' + content + '</div>';
+}
+
+function renderList(items) {
+  if (!items || !items.length) return '<span style="opacity:.4;font-size:.9rem">None identified</span>';
+  return '<ul style="margin:.25rem 0 0;padding-left:1.25rem">'
+    + items.map(function(i) { return '<li style="margin-bottom:.35rem;font-size:.92rem;opacity:.85">' + esc(String(i)) + '</li>'; }).join('')
+    + '</ul>';
+}
+
+function renderAuditView(r) {
+  var container = document.getElementById('auditContent');
+  if (!container) return;
+
+  var modeStr = r.audit_mode || 'scaffold';
+  var html = '';
+
+  // Header
+  html += '<div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1.5rem;flex-wrap:wrap">'
+    + modeBadge(modeStr)
+    + '<span style="font-size:.85rem;opacity:.5">' + esc(r.confidence_note || '') + '</span>'
+    + '</div>';
+
+  // Scores row
+  html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:.75rem;margin-bottom:1.75rem">';
+  html += '<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:.9rem;text-align:center">'
+    + '<div style="font-size:.7rem;opacity:.4;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.4rem">Headline</div>'
+    + scoreBadge((r.copy && r.copy.headline_score) || 0)
+    + '</div>';
+  html += '<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:.9rem;text-align:center">'
+    + '<div style="font-size:.7rem;opacity:.4;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.4rem">Services</div>'
+    + scoreBadge((r.structure && r.structure.services_clarity_score) || 0)
+    + '</div>';
+  html += '<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:.9rem;text-align:center">'
+    + '<div style="font-size:.7rem;opacity:.4;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.4rem">SEO</div>'
+    + scoreBadge((r.seo && r.seo.seo_score) || 0)
+    + '</div>';
+  html += '<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:.9rem;text-align:center">'
+    + '<div style="font-size:.7rem;opacity:.4;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.4rem">Scaffold fit</div>'
+    + scoreBadge(r.scaffold_alignment_score || 0)
+    + '</div>';
+  html += '</div>';
+
+  // Audience
+  if (r.audience) {
+    html += auditSection('Audience & positioning',
+      auditCard('<strong>Target audience</strong><br><span style="opacity:.8;font-size:.92rem">' + esc(r.audience.target_audience || '') + '</span>')
+      + auditCard('<strong>Value proposition</strong><br><span style="opacity:.8;font-size:.92rem">' + esc(r.audience.value_proposition || '') + '</span>')
+      + (r.audience.messaging_gaps && r.audience.messaging_gaps.length
+        ? auditCard('<strong>Messaging gaps</strong>' + renderList(r.audience.messaging_gaps))
+        : '')
+    );
+  }
+
+  // Priority actions — shown prominently
+  if (r.priority_actions) {
+    var wins = r.priority_actions.quick_wins || [];
+    var fixes = r.priority_actions.long_term_fixes || [];
+
+    var winsHtml = wins.length
+      ? wins.map(function(w) {
+          return auditCard(impactBadge(w.impact)
+            + '<span style="font-size:.85rem;opacity:.5;text-transform:uppercase;letter-spacing:.04em">' + esc(w.scope || '') + '</span>'
+            + '<br><span style="font-size:.93rem">' + esc(w.action || '') + '</span>');
+        }).join('')
+      : '<span style="opacity:.4;font-size:.9rem">None identified</span>';
+
+    var fixesHtml = fixes.length
+      ? fixes.map(function(f) {
+          return auditCard(impactBadge(f.impact)
+            + '<span style="font-size:.85rem;opacity:.5;text-transform:uppercase;letter-spacing:.04em">' + esc(f.scope || '') + '</span>'
+            + '<br><span style="font-size:.93rem">' + esc(f.action || '') + '</span>');
+        }).join('')
+      : '<span style="opacity:.4;font-size:.9rem">None identified</span>';
+
+    html += auditSection('Quick wins', winsHtml);
+    html += auditSection('Long-term fixes', fixesHtml);
+  }
+
+  // Conversion friction
+  if (r.conversion && r.conversion.friction_points && r.conversion.friction_points.length) {
+    html += auditSection('Conversion friction',
+      r.conversion.friction_points.map(function(f) {
+        return auditCard(
+          '<strong>' + esc(f.issue || '') + '</strong>'
+          + (f.location ? ' <span style="opacity:.4;font-size:.85rem">— ' + esc(f.location) + '</span>' : '')
+          + '<br><span style="font-size:.9rem;opacity:.7">' + esc(f.recommendation || '') + '</span>'
+        );
+      }).join('')
+    );
+  }
+
+  // Copy
+  if (r.copy) {
+    html += auditSection('Copy',
+      auditCard('<strong>Headline</strong><br><span style="opacity:.8;font-size:.92rem">' + esc(r.copy.headline_recommendation || '') + '</span>')
+      + (r.copy.copy_issues && r.copy.copy_issues.length
+        ? auditCard('<strong>Copy issues</strong>' + renderList(r.copy.copy_issues))
+        : '')
+      + (r.copy.copy_tone_recommended
+        ? auditCard('<strong>Recommended tone</strong><br><span style="opacity:.8;font-size:.92rem">' + esc(r.copy.copy_tone_recommended) + '</span>')
+        : '')
+    );
+  }
+
+  // Structure
+  if (r.structure) {
+    html += auditSection('Structure & navigation',
+      (r.structure.recommended_nav_structure && r.structure.recommended_nav_structure.length
+        ? auditCard('<strong>Recommended nav</strong>' + renderList(r.structure.recommended_nav_structure))
+        : '')
+      + (r.structure.page_gaps && r.structure.page_gaps.length
+        ? auditCard('<strong>Page gaps</strong>' + renderList(r.structure.page_gaps))
+        : '')
+      + (r.structure.services_clarity_note
+        ? auditCard('<strong>Services clarity note</strong><br><span style="opacity:.8;font-size:.92rem">' + esc(r.structure.services_clarity_note) + '</span>')
+        : '')
+    );
+  }
+
+  // SEO
+  if (r.seo && r.seo.seo_recommendations && r.seo.seo_recommendations.length) {
+    html += auditSection('SEO', auditCard('<strong>Recommendations</strong>' + renderList(r.seo.seo_recommendations)));
+  }
+
+  // Trust signals
+  if (r.trust) {
+    html += auditSection('Trust signals',
+      (r.trust.trust_signals_missing && r.trust.trust_signals_missing.length
+        ? auditCard('<strong>Missing</strong>' + renderList(r.trust.trust_signals_missing))
+        : '')
+      + (r.trust.trust_placement_recommendations && r.trust.trust_placement_recommendations.length
+        ? auditCard('<strong>Placement recommendations</strong>' + renderList(r.trust.trust_placement_recommendations))
+        : '')
+    );
+  }
+
+  // Content strategy
+  if (r.content) {
+    html += auditSection('Content strategy',
+      (r.content.content_pillars && r.content.content_pillars.length
+        ? auditCard('<strong>Content pillars</strong>' + renderList(r.content.content_pillars))
+        : '')
+      + (r.content.suggested_posts && r.content.suggested_posts.length
+        ? auditCard('<strong>Suggested posts</strong>' + renderList(r.content.suggested_posts))
+        : '')
+    );
+  }
+
+  // Objections
+  if (r.objections && r.objections.top_objections && r.objections.top_objections.length) {
+    html += auditSection('Top visitor objections', auditCard(renderList(r.objections.top_objections)));
+  }
+
+  // Cross-reference notes (mode 3 only)
+  if (r.cross_reference_notes) {
+    html += auditSection('Cross-reference notes',
+      auditCard('<span style="opacity:.85;font-size:.92rem">' + esc(r.cross_reference_notes) + '</span>')
+    );
+  }
+
+  container.innerHTML = html;
+}
+
+// ─── SCAFFOLD PREVIEW ─────────────────────────────────────────────────────────
 
 function applyBrand(fileMap, b, scopeData, client) {
   Object.keys(fileMap).forEach(function(fname) {
@@ -642,7 +1065,7 @@ function applyProposalContent(text, b, scopeData, client) {
 function buildHeroEyebrow(scopeData, brandData) {
   var business = esc(scopeData.businessName || '');
   var industry = scopeData.industry === 'fitness' ? 'ONLINE FITNESS COACHING' : (scopeData.projectType || 'CUSTOM WEBSITE');
-  return business ? business.toUpperCase() + ' • ' + industry : industry;
+  return business ? business.toUpperCase() + ' \u2022 ' + industry : industry;
 }
 
 function buildHeroHeadline(scopeData, brandData, client) {
@@ -818,6 +1241,8 @@ function buildContactOptions(scopeData, brandData) {
   return '<select required><option value="">I&apos;m interested in...</option>' + options + '<option>General Enquiry</option></select>';
 }
 
+// ─── SCAFFOLD BUILDERS ────────────────────────────────────────────────────────
+
 function buildFallback(type, client, industry) {
   if (type.indexOf('Native') !== -1) return buildAppScaffold(client);
   if (type.indexOf('Backend') !== -1) return buildBackendScaffold(client);
@@ -888,6 +1313,8 @@ function buildAppScaffold(c) {
   };
 }
 
+// ─── FILE PREVIEW ─────────────────────────────────────────────────────────────
+
 function renderTree(f) {
   var names = Object.keys(f);
   var dirs = [];
@@ -924,6 +1351,8 @@ function showFile(k) {
   document.getElementById('codeBox').textContent = files[k] || '';
 }
 
+// ─── DOWNLOAD ─────────────────────────────────────────────────────────────────
+
 async function doZip() {
   if (!Object.keys(files).length) {
     alert('Generate a scaffold before downloading the zip.');
@@ -934,6 +1363,11 @@ async function doZip() {
   setButtonState('downloadBtn', true, 'Preparing zip...');
 
   try {
+    // Include audit report in zip if available
+    if (auditReport) {
+      files['audit-report.json'] = JSON.stringify(auditReport, null, 2);
+    }
+
     var zip = new JSZip();
     Object.keys(files).forEach(function(name) { zip.file(name, files[name]); });
     var blob = await zip.generateAsync({ type: 'blob' });
@@ -964,11 +1398,14 @@ async function doZip() {
   }
 }
 
+// ─── RESET ────────────────────────────────────────────────────────────────────
+
 function doReset() {
   sel = null;
   scope = null;
   files = {};
   brand = {};
+  auditReport = null;
 
   var area = document.getElementById('emailPaste');
   if (area) area.value = '';
@@ -987,6 +1424,9 @@ function doReset() {
   if (tabs) tabs.innerHTML = '';
   var code = document.getElementById('codeBox');
   if (code) code.textContent = '';
+
+  var auditContent = document.getElementById('auditContent');
+  if (auditContent) auditContent.innerHTML = '';
 
   ['bTagline', 'bAbout', 'bPhone', 'bEmail', 'bInstagram', 'bFacebook', 'bTikTok', 'bLogo', 'bHeroKeyword'].forEach(function(id) {
     var el = document.getElementById(id);
@@ -1010,6 +1450,8 @@ function doReset() {
   setButtonState('downloadBtn', false, 'Download zip');
   goTo(1);
 }
+
+// ─── COLOUR PICKER ────────────────────────────────────────────────────────────
 
 var _brightness = 1;
 var _wheelDrawn = false;
@@ -1090,9 +1532,7 @@ function updateSwatch(hex) {
 }
 
 function hslToRgb(h, s, l) {
-  var r;
-  var g;
-  var b;
+  var r, g, b;
   if (s === 0) {
     r = g = b = l;
   } else {
@@ -1112,6 +1552,8 @@ function hslToRgb(h, s, l) {
   }
   return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
 }
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
 
 window.addEventListener('DOMContentLoaded', function() {
   initPasteView();
