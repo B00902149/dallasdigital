@@ -647,7 +647,10 @@ function buildHeroEyebrow(scopeData, brandData) {
 
 function buildHeroHeadline(scopeData, brandData, client) {
   var source = cleanValue((brandData && brandData.tagline) || '');
-  if (/strongest life/i.test(source)) return 'LIVE YOUR<br>STRONGEST LIFE.';
+  if (scopeData && scopeData.industry === 'fitness') {
+    if (/strongest life/i.test(source)) return 'LIVE STRONGER.<br>FEEL BETTER.';
+    return 'PERSONAL COACHING.<br>REAL RESULTS.';
+  }
   if (/results/i.test(source)) return 'BUILD A BRAND<br>THAT CONVERTS.';
   var business = cleanValue(scopeData.businessName || client || '');
   if (business) return esc(business.toUpperCase().replace(/\s+/g, ' '));
@@ -721,7 +724,9 @@ function buildFitnessServiceItems(scopeData, brandData) {
 function buildAboutSection(scopeData, brandData) {
   var about = esc((brandData && brandData.about) || '');
   if (!about) return '';
-  var pillars = buildBenefitItems(scopeData, brandData).slice(0, 3);
+  var pillars = scopeData && scopeData.industry === 'fitness'
+    ? buildFitnessSupportItems(scopeData, brandData)
+    : buildBenefitItems(scopeData, brandData).slice(0, 3);
   if (!pillars.length) {
     pillars = [{ title: 'Tailored Support', body: 'A client-first experience built around clear guidance, confidence, and momentum.' }];
   }
@@ -751,12 +756,50 @@ function buildBenefitItems(scopeData, brandData) {
   return items.slice(0, 3);
 }
 
+function buildFitnessSupportItems(scopeData, brandData) {
+  var business = cleanValue((scopeData && scopeData.businessName) || 'This coaching approach');
+  var tagline = cleanValue((brandData && brandData.tagline) || '');
+  return [
+    {
+      title: 'Tailored Coaching',
+      body: business + ' is designed around personalised guidance, practical structure, and sustainable progress.'
+    },
+    {
+      title: 'Flexible Support',
+      body: 'From first enquiry to ongoing sessions, every step is built to feel clear, approachable, and easy to follow.'
+    },
+    {
+      title: 'Motivation That Lasts',
+      body: tagline ? tagline + '.' : 'Encouragement, accountability, and real support help clients stay consistent over time.'
+    }
+  ];
+}
+
 function buildBenefitCards(scopeData, brandData) {
-  var items = buildBenefitItems(scopeData, brandData);
+  var items = scopeData && scopeData.industry === 'fitness'
+    ? buildFitnessWhyChooseItems(scopeData, brandData)
+    : buildBenefitItems(scopeData, brandData);
   if (!items.length) return '';
   return '<div class="grid-3">\n' + items.map(function(item, index) {
     return '      <div class="card" data-anim' + (index ? ' data-anim-delay="' + index + '"' : '') + '><div class="card-icon">&#10022;</div><h3>' + esc(item.title) + '</h3><p style="color:var(--muted);font-size:.92rem;margin-bottom:0">' + esc(item.body) + '</p></div>';
   }).join('\n') + '\n    </div>';
+}
+
+function buildFitnessWhyChooseItems(scopeData, brandData) {
+  return [
+    {
+      title: 'Clear Guidance',
+      body: 'Clients get a straightforward path forward, with coaching that feels structured, supportive, and easy to trust.'
+    },
+    {
+      title: 'Personal Accountability',
+      body: 'Every interaction is shaped to help clients stay committed, build momentum, and keep moving with confidence.'
+    },
+    {
+      title: 'Results With Balance',
+      body: 'The experience is built around real life, helping clients pursue progress in a way that feels motivating and sustainable.'
+    }
+  ];
 }
 
 function buildContactOptions(scopeData, brandData) {
