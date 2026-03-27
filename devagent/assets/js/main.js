@@ -103,11 +103,13 @@ async function parseEmail() {
     var raw = await aiCall(
       [{ role: 'user', content: 'Parse this proposal email:\n\n' + emailText }],
       'You are a project scoping assistant for DallasTech, a UK freelance web dev studio. '
-      + 'Extract all available information from this proposal email. '
-      + 'These emails may be proposal documents, not simple enquiries, so infer fields from headings and body content when needed. '
-      + 'If the email is addressed to the client, use the recipient name as clientName and the venture/company name as businessName. '
-      + 'Do not use generic phrases, bullet text, testimonials, or feature labels as names. '
+      + 'This is an OUTBOUND proposal — written BY Adrian Dallas TO the client. '
+      + 'CRITICAL: clientName is the person GREETED at the top (Dear X / Hi X). NEVER use the sign-off name (that is Adrian). '
+      + 'businessName is the client venture or project name mentioned in the proposal body. '
+      + 'projectType must be one of the four options exactly as listed — read the Tech Stack and Feature Breakdown sections carefully. '
+      + 'stack must list the actual technologies from the Tech Stack section, not generic defaults. '
       + 'Prefer explicit values from sections like Introduction, Understanding Your Project, Feature Breakdown, Tech Stack, Timeline Breakdown, Investment, and Existing Presence. '
+      + 'Do not use generic phrases, bullet text, testimonials, or feature labels as names. '
       + 'Return ONLY valid JSON (no markdown, no extra text) with these exact fields '
       + '(use empty string "" if not found):\n'
       + '{\n'
@@ -279,15 +281,19 @@ function isSuspiciousName(value) {
 }
 
 function extractGreetingName(text) {
-  var m = text.match(/\b(?:dear|hi|hello)\s+([A-Z][a-z]+(?: [A-Z][a-z]+){0,2})\b/);
-  return m ? cleanValue(m[1]) : '';
+  // Match "Dear Name," / "Hi Name," / "Hello Name" — outbound proposal greeting
+  var m = text.match(/^\s*(?:dear|hi|hello)[,\s]+([A-Z][a-z]+(?: [A-Z][a-z]+){0,2})[,!\s]/im);
+  if (m) return cleanValue(m[1]);
+  // Fallback: anywhere in the text
+  var m2 = text.match(/\b(?:dear|hi|hello)\s+([A-Z][a-z]+(?: [A-Z][a-z]+){0,2})\b/i);
+  return m2 ? cleanValue(m2[1]) : '';
 }
 
 function extractName(text) {
+  // For outbound proposals (written by Adrian TO client), the greeting is the
+  // only reliable source of the client name. Never use sign-off — that's Adrian.
   var greeting = extractGreetingName(text);
   if (greeting && !isSuspiciousName(greeting)) return greeting;
-  var fromMatch = text.match(/(?:from|regards|cheers|thanks|best regards|kind regards|best)[,:\s]+([A-Z][a-z]+(?: [A-Z][a-z]+){0,2})/i);
-  if (fromMatch && !isSuspiciousName(fromMatch[1])) return cleanValue(fromMatch[1]);
   return 'Client';
 }
 
@@ -313,11 +319,21 @@ function normalizeIndustry(value, text) {
 }
 
 function normalizeProjectType(value, text) {
-  var source = cleanValue(value).toLowerCase() + ' ' + String(text || '').toLowerCase();
-  if (/(full-stack|full stack|web and backend)/.test(source)) return 'Full-Stack';
-  if (/(react native|mobile app|app store|play store)/.test(source) && /(website|backend|api|node\/express)/.test(source)) return 'Full-Stack';
-  if (/(react native|ios|android|mobile app|app store|play store)/.test(source)) return 'React Native App';
-  if (/(backend|api|node\/express|express|server-side)/.test(source) && !/(website|front-end|frontend|landing page)/.test(source)) return 'Node/Express Backend';
+  // Trust the AI-parsed value first — only use regex fallback if AI returned nothing
+  var aiValue = cleanValue(value).toLowerCase();
+  if (aiValue === 'full-stack' || aiValue === 'full stack') return 'Full-Stack';
+  if (aiValue === 'react native app') return 'React Native App';
+  if (aiValue === 'node/express backend') return 'Node/Express Backend';
+  if (aiValue === 'bespoke website') return 'Bespoke Website';
+
+  // Regex fallback on full text only when AI returned nothing useful
+  if (!aiValue) {
+    var t = String(text || '').toLowerCase();
+    if (/(full-stack|full stack|web and backend)/.test(t)) return 'Full-Stack';
+    if (/(react native|mobile app|app store|play store)/.test(t) && /(website|backend|api)/.test(t)) return 'Full-Stack';
+    if (/(react native|ios|android|mobile app)/.test(t)) return 'React Native App';
+    if (/(node\/express|express api|server-side)/.test(t) && !/(website|landing page)/.test(t)) return 'Node/Express Backend';
+  }
   return 'Bespoke Website';
 }
 
@@ -329,17 +345,33 @@ function extractSection(text, heading) {
 }
 
 function extractBusinessName(text) {
+  // Ordered from most to least specific — first confident match wins
   var patterns = [
-    /project quote for\s+([^,\n]+?)(?:,\s+your|\.)/i,
-    /proposal (?:for|to)\s+([^,\n]+?)(?:,\s+your|\.)/i,
+    // "vision for Al-Sanity Fitness," — most common in outbound proposals
+    /vision for\s+([A-Za-z0-9][A-Za-z0-9&\'\-\. ]{1,40}?)\s*,/i,
+    // "building a [native] [mobile] app/website for BusinessName,"
+    /building\s+(?:a\s+)?(?:\w+\s+){0,2}(?:app|website|platform)\s+for\s+([A-Za-z0-9][A-Za-z0-9&\'\-\. ]{2,40}?)\s*[,\.]/i,
+    // "propose building ... for BusinessName" 
+    /propose\s+building[^.]+?for\s+([A-Za-z0-9][A-Za-z0-9&\'\-\. ]{2,40}?)[,\.\s]/i,
+    // "project quote for X, your"
+    /project quote for\s+([^,\n]+?)(?:,\s*your|\.)/i,
+    // "proposal for/to X, your"
+    /proposal (?:for|to)\s+([^,\n]+?)(?:,\s*your|\.)/i,
+    // explicit field
     /business\/project:\s*([^\n]+)/i,
-    /for\s+([A-Z][A-Za-z0-9&' -]{2,})\s*,\s*your\s+[A-Z][A-Za-z&' -]+ venture/i
+    // "for BusinessName, your [type] venture"
+    /for\s+([A-Z][A-Za-z0-9&\' -]{2,})\s*,\s*your\s+[A-Z][A-Za-z&\' -]+ venture/i,
+    // "the BusinessName mobile app/website/project" — last resort
+    /the\s+([A-Za-z0-9][A-Za-z0-9&\'\-\. ]{2,40}?)\s+(?:mobile app|website|app|project)\b/i
   ];
   for (var i = 0; i < patterns.length; i++) {
     var m = text.match(patterns[i]);
     if (m) {
       var candidate = cleanValue(m[1]);
-      if (!isSuspiciousName(candidate)) return candidate;
+      // Must be at least 2 chars, not a generic word, not suspiciously long
+      if (candidate.length >= 2 && candidate.length <= 50 && !/^(the|a|an|your|my|this|that|mobile|native|app|website)$/i.test(candidate)) {
+        return candidate;
+      }
     }
   }
   return '';
@@ -375,10 +407,14 @@ function extractBulletList(sectionText) {
 function extractStack(text) {
   var section = extractSection(text, 'Tech Stack');
   var bullets = extractBulletList(section).map(function(item) {
-    var label = cleanValue(item.split(':')[0]);
-    return titleCaseWords(label.replace(/front-end/i, 'Front-end').replace(/back-end/i, 'Back-end'));
+    // Split on " for ", " to ", " -" to strip the description and keep only the tech name
+    var tech = item.split(/\s+for\s+|\s+to\s+|\s+-\s+/i)[0];
+    // Also split on colon (e.g. "React Native: cross-platform")
+    tech = tech.split(':')[0];
+    tech = cleanValue(tech);
+    return titleCaseWords(tech.replace(/front-end/i, 'Front-end').replace(/back-end/i, 'Back-end'));
   }).filter(function(item) {
-    return item && item.length <= 24 && !/\s{2,}/.test(item) && !/^to ensure /i.test(item);
+    return item && item.length >= 2 && item.length <= 30 && !/^(to|for|and|the|a|an)$/i.test(item);
   });
   return bullets.length ? bullets : [];
 }
@@ -452,7 +488,19 @@ function normalizeParsedProposal(parsed, text) {
 
   var stack = normalizeStringList(parsed.stack);
   if (!stack.length) stack = extractStack(text);
-  if (!stack.length) stack = ['HTML', 'CSS', 'JS'];
+  if (!stack.length) {
+    // Default stack based on project type rather than always HTML/CSS/JS
+    var pt = cleanValue(parsed.projectType).toLowerCase();
+    if (pt.indexOf('native') !== -1) {
+      stack = ['React Native', 'Expo', 'Node.js'];
+    } else if (pt.indexOf('backend') !== -1) {
+      stack = ['Node.js', 'Express', 'MongoDB'];
+    } else if (pt.indexOf('full') !== -1) {
+      stack = ['React Native', 'Node.js', 'Express', 'MongoDB'];
+    } else {
+      stack = ['HTML', 'CSS', 'JS'];
+    }
+  }
 
   var features = normalizeStringList(parsed.features);
   if (!features.length || /responsive design|contact form|seo/i.test(features.join(' '))) {
