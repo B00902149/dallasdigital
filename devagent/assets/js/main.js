@@ -106,7 +106,12 @@ async function parseEmail() {
       + 'This is an OUTBOUND proposal — written BY Adrian Dallas TO the client. '
       + 'CRITICAL: clientName is the person GREETED at the top (Dear X / Hi X). NEVER use the sign-off name (that is Adrian). '
       + 'businessName is the client venture or project name mentioned in the proposal body. '
-      + 'projectType must be one of the four options exactly as listed — read the Tech Stack and Feature Breakdown sections carefully. '
+      + 'projectType classification rules — read carefully: '
+      + 'Use "React Native App" if the proposal mentions React Native, iOS, Android, mobile app, or App Store/Play Store WITHOUT a separate web frontend. '
+      + 'Use "Full-Stack" ONLY if the proposal explicitly builds BOTH a mobile/web app AND a separate backend API or web frontend. '
+      + 'Use "Node/Express Backend" if the proposal is purely a server, API, or backend service with no frontend. '
+      + 'Use "Bespoke Website" for all other web-only projects. '
+      + 'In this proposal, if React Native is in the Tech Stack and the deliverable is a mobile app, the answer is "React Native App". '
       + 'stack must list the actual technologies from the Tech Stack section, not generic defaults. '
       + 'Prefer explicit values from sections like Introduction, Understanding Your Project, Feature Breakdown, Tech Stack, Timeline Breakdown, Investment, and Existing Presence. '
       + 'Do not use generic phrases, bullet text, testimonials, or feature labels as names. '
@@ -473,7 +478,7 @@ function normalizeStringList(value) {
   if (Array.isArray(value)) return value.map(cleanValue).filter(Boolean);
   if (!value) return [];
   return String(value).split(/,|\n/).map(cleanValue).filter(function(item) {
-    return item && item.length <= 80;
+    return item && item.length <= 160;
   });
 }
 
@@ -503,11 +508,13 @@ function normalizeParsedProposal(parsed, text) {
   }
 
   var features = normalizeStringList(parsed.features);
-  if (!features.length || /responsive design|contact form|seo/i.test(features.join(' '))) {
-    var extractedFeatures = extractFeatures(text);
-    if (extractedFeatures.length) features = extractedFeatures;
-  }
-  if (!features.length) features = ['Responsive design', 'Contact form', 'SEO'];
+  // Always attempt regex extraction from raw text — use whichever gives more features
+  var extractedFeatures = extractFeatures(text);
+  if (extractedFeatures.length > features.length) features = extractedFeatures;
+  // Fall back to AI result only if regex found nothing
+  if (!features.length) features = normalizeStringList(parsed.features);
+  // Last resort defaults only for truly empty proposals
+  if (!features.length) features = ['Custom design', 'Mobile responsive', 'Contact form'];
 
   var timeline = cleanValue(parsed.timeline) || extractTimeline(text) || 'TBC';
   var budget = cleanValue(parsed.budget) || extractBudget(text) || 'TBC';
