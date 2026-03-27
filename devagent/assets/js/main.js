@@ -324,21 +324,34 @@ function normalizeIndustry(value, text) {
 }
 
 function normalizeProjectType(value, text) {
-  // Trust the AI-parsed value first — only use regex fallback if AI returned nothing
+  var t = String(text || '').toLowerCase();
+
+  // Step 1: extract the Tech Stack section and check what's actually listed
+  var stackSection = extractSection(text, 'Tech Stack').toLowerCase();
+  var hasRN      = /react native/.test(stackSection) || /react native/.test(t);
+  var hasMobile  = /mobile app|ios|android|app store|play store/.test(t);
+  var hasWebOnly = /bespoke website|web frontend|web-only|landing page/.test(t);
+  var hasBackend = /node\/express|express api|rest api|graphql api/.test(stackSection);
+  var hasBothExplicit = /(full.stack|web and (mobile|backend)|mobile and web)/.test(t);
+
+  // Step 2: rule-based classification — most specific first
+  // Pure backend: has backend tech, no mobile, no web frontend
+  if (hasBackend && !hasRN && !hasMobile && !hasWebOnly) return 'Node/Express Backend';
+  // Explicit full-stack mention or BOTH mobile and web frontend signals
+  if (hasBothExplicit) return 'Full-Stack';
+  // React Native + mobile signals without explicit web frontend = RN app
+  if (hasRN && hasMobile && !hasWebOnly) return 'React Native App';
+  // React Native without mobile signals — still RN app
+  if (hasRN && !hasWebOnly) return 'React Native App';
+  // Mobile app signals without RN — could be RN or native
+  if (hasMobile && !hasWebOnly) return 'React Native App';
+
+  // Step 3: AI value as tiebreaker only when regex is ambiguous
   var aiValue = cleanValue(value).toLowerCase();
-  if (aiValue === 'full-stack' || aiValue === 'full stack') return 'Full-Stack';
   if (aiValue === 'react native app') return 'React Native App';
   if (aiValue === 'node/express backend') return 'Node/Express Backend';
-  if (aiValue === 'bespoke website') return 'Bespoke Website';
+  if (aiValue === 'full-stack' || aiValue === 'full stack') return 'Full-Stack';
 
-  // Regex fallback on full text only when AI returned nothing useful
-  if (!aiValue) {
-    var t = String(text || '').toLowerCase();
-    if (/(full-stack|full stack|web and backend)/.test(t)) return 'Full-Stack';
-    if (/(react native|mobile app|app store|play store)/.test(t) && /(website|backend|api)/.test(t)) return 'Full-Stack';
-    if (/(react native|ios|android|mobile app)/.test(t)) return 'React Native App';
-    if (/(node\/express|express api|server-side)/.test(t) && !/(website|landing page)/.test(t)) return 'Node/Express Backend';
-  }
   return 'Bespoke Website';
 }
 
@@ -406,7 +419,13 @@ function extractBulletList(sectionText) {
   return String(sectionText || '')
     .split(/\r?\n/)
     .map(function(line) { return cleanValue(line.replace(/^[*\-•]\s*/, '')); })
-    .filter(function(line) { return line && !/^[A-Z][A-Za-z&' -]+$/.test(line); });
+    .filter(function(line) {
+      if (!line) return false;
+      // Drop only SHORT lines that look like section headings (no punctuation, under 32 chars)
+      // Long clean sentences (features) must be kept even if they have no special chars
+      var looksLikeHeading = /^[A-Z][A-Za-z&' -]+$/.test(line) && line.length < 32;
+      return !looksLikeHeading;
+    });
 }
 
 function extractStack(text) {
@@ -430,9 +449,14 @@ function extractFeatures(text) {
     return cleanValue(item.replace(/^[^:]+:\s*/, function(match) {
       return match.replace(/:\s*$/, '');
     }));
+  }).filter(function(item) {
+    // Drop intro/preamble sentences (end with colon, or contain 'following', 'include', 'below')
+    if (/(?:following|included|include|below|the app)[:\s]*$/i.test(item)) return false;
+    // Must be at least 10 chars to be a real feature
+    return item && item.length >= 10;
   });
   if (bullets.length) {
-    return bullets.slice(0, 6).map(function(item) {
+    return bullets.slice(0, 8).map(function(item) {
       var parts = item.split(':');
       return cleanValue(parts.length > 1 ? parts[0] + ': ' + parts.slice(1).join(':') : item);
     }).filter(function(item) {
