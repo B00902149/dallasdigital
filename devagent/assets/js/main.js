@@ -9,6 +9,8 @@ var WORKFLOW_STEPS = 4;
 // Routes through the existing Railway proxy.
 var API_BASE = window.location.origin;
 
+// ─── PIP / NAVIGATION ─────────────────────────────────────────────────────────
+
 function pip(n, completed) {
   var step = Math.max(1, Math.min(WORKFLOW_STEPS, n || 1));
   for (var i = 1; i <= WORKFLOW_STEPS; i++) {
@@ -45,16 +47,33 @@ function setHidden(id, hidden) {
   el.classList.toggle('is-hidden', !!hidden);
 }
 
-async function aiCall(messages, system) {
+// ─── AI CALL ──────────────────────────────────────────────────────────────────
+
+async function aiCall(messages, system, maxTokens) {
   var res = await fetch(API_BASE + '/api/claude', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ system: system || '', messages: messages, max_tokens: 1500 })
+    body: JSON.stringify({
+      system: system || '',
+      messages: messages,
+      max_tokens: maxTokens || 1500
+    })
   });
+
+  // Guard: if the proxy returns a non-JSON response (e.g. HTML error page on 403/405),
+  // surface a clear error rather than a confusing JSON parse failure.
+  var contentType = res.headers.get('content-type') || '';
+  if (!contentType.includes('application/json')) {
+    var text = await res.text();
+    throw new Error('API proxy returned HTTP ' + res.status + '. Response: ' + text.slice(0, 120));
+  }
+
   var data = await res.json();
   if (data.error) throw new Error(data.error);
   return (data.content || []).map(function(b) { return b.text || ''; }).filter(Boolean).join('\n');
 }
+
+// ─── PARSE VIEW ───────────────────────────────────────────────────────────────
 
 function initPasteView() {
   var btn = document.getElementById('parseBtn');
@@ -108,7 +127,8 @@ async function parseEmail() {
       + '  "facebook": "facebook URL if mentioned",\n'
       + '  "tiktok": "tiktok URL if mentioned",\n'
       + '  "logo": "logo URL if mentioned",\n'
-      + '  "hero": "1-2 word image keyword matching the industry e.g. restaurant, flowers, gym"\n'
+      + '  "hero": "1-2 word image keyword matching the industry e.g. restaurant, flowers, gym",\n'
+      + '  "clientUrl": "existing website URL if mentioned, empty string if not"\n'
       + '}'
     );
 
@@ -155,6 +175,8 @@ async function parseEmail() {
   goTo(2);
 }
 
+// ─── SCOPE SUMMARY ────────────────────────────────────────────────────────────
+
 function renderScopeSummary(s) {
   var el = document.getElementById('scopeSummary');
   if (!el) return;
@@ -162,6 +184,10 @@ function renderScopeSummary(s) {
   var features = (s.features || []).map(function(f) { return '&#8226; ' + esc(f); }).join('<br>');
   var timeline = esc(s.timeline || 'TBC');
   var timelineCompact = esc(compactTimeline(s.timeline || 'TBC'));
+  var clientUrlDisplay = s.clientUrl
+    ? '<a href="' + esc(s.clientUrl) + '" target="_blank" style="color:var(--accent)">' + esc(s.clientUrl) + '</a>'
+    : '<span style="opacity:.5">None — new build</span>';
+
   el.style.display = 'grid';
   el.innerHTML =
       '<div class="sitem"><div class="skey">Client</div><div class="sval">' + esc(s.clientName || '-') + '</div></div>'
@@ -170,6 +196,7 @@ function renderScopeSummary(s) {
     + '<div class="sitem"><div class="skey">Industry</div><div class="sval">' + esc(s.industry || '-') + '</div></div>'
     + '<div class="sitem"><div class="skey">Budget</div><div class="sval">' + esc(s.budget || 'TBC') + '</div></div>'
     + '<div class="sitem"><div class="skey">Timeline</div><div class="sval">' + timelineCompact + '</div><div class="smeta">' + timeline + '</div></div>'
+    + '<div class="sitem" style="grid-column:1/-1"><div class="skey">Existing site</div><div class="sval">' + clientUrlDisplay + '</div></div>'
     + '<div class="sitem" style="grid-column:1/-1"><div class="skey">Stack</div><div class="sval">' + esc(stack || 'TBC') + '</div></div>'
     + '<div class="sitem" style="grid-column:1/-1"><div class="skey">Features</div>'
     +   '<div class="sval stext-list">'
@@ -182,6 +209,8 @@ function renderScopeSummary(s) {
     +     '<option value="Full-Stack"' + (s.projectType === 'Full-Stack' ? ' selected' : '') + '>Full-Stack (Web + Backend)</option>'
     +   '</select></div>';
 }
+
+// ─── PARSING HELPERS ──────────────────────────────────────────────────────────
 
 function compactTimeline(value) {
   var text = cleanValue(value);
@@ -196,6 +225,16 @@ function compactTimeline(value) {
 function extractEmail(text) {
   var m = text.match(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/);
   return m ? m[0] : '';
+}
+
+function extractClientUrl(text) {
+  // Look for explicit "website" or "existing" URL mentions first
+  var explicit = text.match(/(?:existing (?:website|site)|current (?:website|site)|website)[:\s]+?(https?:\/\/[^\s,\n"'<>]+)/i);
+  if (explicit) return cleanValue(explicit[1]);
+  // Fall back to any URL that looks like a business website (not social)
+  var urls = text.match(/https?:\/\/(?!(?:www\.)?(?:instagram|facebook|tiktok|twitter|linkedin|youtube)\.)[^\s,\n"'<>]+/g);
+  if (urls && urls.length) return cleanValue(urls[0]);
+  return '';
 }
 
 function cleanValue(value) {
@@ -247,10 +286,8 @@ function extractGreetingName(text) {
 function extractName(text) {
   var greeting = extractGreetingName(text);
   if (greeting && !isSuspiciousName(greeting)) return greeting;
-
   var fromMatch = text.match(/(?:from|regards|cheers|thanks|best regards|kind regards|best)[,:\s]+([A-Z][a-z]+(?: [A-Z][a-z]+){0,2})/i);
   if (fromMatch && !isSuspiciousName(fromMatch[1])) return cleanValue(fromMatch[1]);
-
   return 'Client';
 }
 
@@ -428,6 +465,9 @@ function normalizeParsedProposal(parsed, text) {
   var budget = cleanValue(parsed.budget) || extractBudget(text) || 'TBC';
   var clientEmail = cleanValue(parsed.clientEmail) || extractEmail(text);
 
+  // clientUrl: prefer AI-parsed value, fall back to regex extraction from raw text
+  var clientUrl = cleanValue(parsed.clientUrl) || extractClientUrl(text);
+
   var brandData = {
     tagline: cleanValue(parsed.tagline) || inferTagline(businessName, industry),
     about: cleanValue(parsed.about) || inferAbout(text, businessName || clientName, industry),
@@ -449,7 +489,8 @@ function normalizeParsedProposal(parsed, text) {
       stack: stack,
       features: features,
       timeline: timeline,
-      budget: budget
+      budget: budget,
+      clientUrl: clientUrl
     },
     brand: brandData
   };
@@ -458,6 +499,8 @@ function normalizeParsedProposal(parsed, text) {
 function localGuessScope(text) {
   return normalizeParsedProposal({}, text).scope;
 }
+
+// ─── BRAND VIEW ───────────────────────────────────────────────────────────────
 
 function goToBrand() {
   if (!scope) {
@@ -515,6 +558,8 @@ function validateBrand(b) {
   return missing;
 }
 
+// ─── SCAFFOLD ─────────────────────────────────────────────────────────────────
+
 async function doBrandedScaffold() {
   if (!scope) {
     alert('Please parse a proposal before generating a scaffold.');
@@ -554,7 +599,85 @@ async function doScaffold() {
   var keys = Object.keys(files);
   renderTabs(keys);
   if (keys.length) showFile(keys[0]);
+
+  // Inject per-page developer briefs into HTML files as comment blocks
+  injectBriefs();
 }
+
+// ─── PER-PAGE BRIEF INJECTION ────────────────────────────────────────────────
+// Makes one small Groq call per HTML page. Response is a plain-text developer
+// brief (components, copy direction, SEO) injected as an HTML comment block at
+// the top of each file. Small payload per call = no proxy 405 errors.
+
+var PAGE_BRIEF_SYSTEM = 'You are a senior web developer writing a concise developer brief. '
+  + 'Given a page name, industry, and project features, return a plain-text block (no JSON, no markdown) '
+  + 'with exactly these four labelled sections separated by newlines: '
+  + 'COMPONENTS: comma-separated list of UI components needed on this page. '
+  + 'COPY: 1-2 sentences of suggested headline and subheading copy for this page. '
+  + 'SEO: meta title (under 60 chars) and meta description (under 155 chars), each on its own line. '
+  + 'CHECKLIST: 3-5 short must-have items for this page as a dash list. '
+  + 'Be specific to the industry and business. No preamble, no sign-off.';
+
+async function injectBriefs() {
+  var htmlFiles = Object.keys(files).filter(function(f) { return f.indexOf('.html') !== -1; });
+  if (!htmlFiles.length) return;
+
+  var briefStatus = document.getElementById('briefStatus');
+  if (briefStatus) briefStatus.textContent = 'Generating developer briefs...';
+
+  var industry   = (scope && scope.industry)    || 'generic';
+  var business   = (scope && scope.businessName) || (scope && scope.clientName) || 'Client';
+  var features   = (scope && scope.features || []).slice(0, 5).join(', ') || 'standard website features';
+  var projectType = (scope && scope.projectType) || 'Bespoke Website';
+
+  for (var i = 0; i < htmlFiles.length; i++) {
+    var fname = htmlFiles[i];
+    var pageName = fname.replace(/^.*\//, '').replace('.html', '') || 'index';
+
+    var prompt = 'Page: ' + pageName + '\n'
+      + 'Business: ' + business + '\n'
+      + 'Industry: ' + industry + '\n'
+      + 'Project type: ' + projectType + '\n'
+      + 'Key features: ' + features;
+
+    try {
+      var brief = await aiCall(
+        [{ role: 'user', content: prompt }],
+        PAGE_BRIEF_SYSTEM,
+        400
+      );
+
+      var commentBlock = [
+        '<!--',
+        '================================================================',
+        'DEVELOPER BRIEF — ' + pageName.toUpperCase() + '.html',
+        'Generated by DevAgent for ' + business,
+        '================================================================',
+        brief.trim(),
+        '================================================================',
+        '-->'
+      ].join('\n');
+
+      files[fname] = commentBlock + '\n\n' + files[fname];
+
+      // Refresh preview if this tab is active
+      var activeTab = document.querySelector('.tab.active');
+      if (activeTab && activeTab.textContent.trim() === fname.split('/').pop()) {
+        showFile(fname);
+      }
+    } catch (e) {
+      // Brief failed for this page — skip silently, scaffold is still valid
+      console.warn('Brief failed for ' + fname + ':', e.message);
+    }
+  }
+
+  if (briefStatus) briefStatus.textContent = 'Briefs ready — open any HTML file in VS Code.';
+
+  // Refresh tree to show updated file sizes
+  renderTree(files);
+}
+
+// ─── SCAFFOLD PREVIEW ──────────────────────────────────────────────────────
 
 function applyBrand(fileMap, b, scopeData, client) {
   Object.keys(fileMap).forEach(function(fname) {
@@ -642,7 +765,7 @@ function applyProposalContent(text, b, scopeData, client) {
 function buildHeroEyebrow(scopeData, brandData) {
   var business = esc(scopeData.businessName || '');
   var industry = scopeData.industry === 'fitness' ? 'ONLINE FITNESS COACHING' : (scopeData.projectType || 'CUSTOM WEBSITE');
-  return business ? business.toUpperCase() + ' • ' + industry : industry;
+  return business ? business.toUpperCase() + ' \u2022 ' + industry : industry;
 }
 
 function buildHeroHeadline(scopeData, brandData, client) {
@@ -818,6 +941,8 @@ function buildContactOptions(scopeData, brandData) {
   return '<select required><option value="">I&apos;m interested in...</option>' + options + '<option>General Enquiry</option></select>';
 }
 
+// ─── SCAFFOLD BUILDERS ────────────────────────────────────────────────────────
+
 function buildFallback(type, client, industry) {
   if (type.indexOf('Native') !== -1) return buildAppScaffold(client);
   if (type.indexOf('Backend') !== -1) return buildBackendScaffold(client);
@@ -888,6 +1013,8 @@ function buildAppScaffold(c) {
   };
 }
 
+// ─── FILE PREVIEW ─────────────────────────────────────────────────────────────
+
 function renderTree(f) {
   var names = Object.keys(f);
   var dirs = [];
@@ -924,6 +1051,8 @@ function showFile(k) {
   document.getElementById('codeBox').textContent = files[k] || '';
 }
 
+// ─── DOWNLOAD ─────────────────────────────────────────────────────────────────
+
 async function doZip() {
   if (!Object.keys(files).length) {
     alert('Generate a scaffold before downloading the zip.');
@@ -934,6 +1063,7 @@ async function doZip() {
   setButtonState('downloadBtn', true, 'Preparing zip...');
 
   try {
+
     var zip = new JSZip();
     Object.keys(files).forEach(function(name) { zip.file(name, files[name]); });
     var blob = await zip.generateAsync({ type: 'blob' });
@@ -963,6 +1093,8 @@ async function doZip() {
     setButtonState('downloadBtn', false, 'Download zip');
   }
 }
+
+// ─── RESET ────────────────────────────────────────────────────────────────────
 
 function doReset() {
   sel = null;
@@ -1010,6 +1142,8 @@ function doReset() {
   setButtonState('downloadBtn', false, 'Download zip');
   goTo(1);
 }
+
+// ─── COLOUR PICKER ────────────────────────────────────────────────────────────
 
 var _brightness = 1;
 var _wheelDrawn = false;
@@ -1090,9 +1224,7 @@ function updateSwatch(hex) {
 }
 
 function hslToRgb(h, s, l) {
-  var r;
-  var g;
-  var b;
+  var r, g, b;
   if (s === 0) {
     r = g = b = l;
   } else {
@@ -1112,6 +1244,8 @@ function hslToRgb(h, s, l) {
   }
   return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
 }
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
 
 window.addEventListener('DOMContentLoaded', function() {
   initPasteView();
