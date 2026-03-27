@@ -769,7 +769,10 @@ async function injectBriefs() {
     }
   }
 
-  if (briefStatus) briefStatus.textContent = 'Briefs ready — open any HTML file in VS Code.';
+  var isRNDone = (scope && scope.projectType || '').indexOf('Native') !== -1;
+  if (briefStatus) briefStatus.textContent = isRNDone
+    ? 'Briefs ready — open any screen file in VS Code.'
+    : 'Briefs ready — open any HTML file in VS Code.';
 
   // Refresh tree to show updated file sizes
   renderTree(files);
@@ -1459,22 +1462,39 @@ function darkenHex(hex, amount) {
 // ─── FILE PREVIEW ─────────────────────────────────────────────────────────────
 
 function renderTree(f) {
-  var names = Object.keys(f);
-  var dirs = [];
+  var names = Object.keys(f).sort();
   var html = '';
+  var shownDirs = {};
+
   names.forEach(function(n) {
-    if (n.indexOf('/') !== -1) {
-      var d = n.split('/')[0];
-      if (dirs.indexOf(d) === -1) dirs.push(d);
+    var parts = n.split('/');
+    if (parts.length === 1) {
+      // Root file
+      html += '<div class="ffile" style="padding-left:0">' + esc(n) + '</div>';
+    } else if (parts.length === 2) {
+      // e.g. src/theme.js — show parent dir once
+      var d = parts[0];
+      if (!shownDirs[d]) {
+        shownDirs[d] = true;
+        html += '<div class="fdir" style="margin-top:4px">&#128193; ' + esc(d) + '/</div>';
+      }
+      html += '<div class="ffile">' + esc(parts[1]) + '</div>';
+    } else if (parts.length === 3) {
+      // e.g. src/screens/HomeScreen.js — show grandparent + parent once
+      var gp = parts[0];
+      var p  = parts[0] + '/' + parts[1];
+      if (!shownDirs[gp]) {
+        shownDirs[gp] = true;
+        html += '<div class="fdir" style="margin-top:4px">&#128193; ' + esc(gp) + '/</div>';
+      }
+      if (!shownDirs[p]) {
+        shownDirs[p] = true;
+        html += '<div class="ffile" style="padding-left:20px;opacity:.7;font-size:12px">&#128193; ' + esc(parts[1]) + '/</div>';
+      }
+      html += '<div class="ffile" style="padding-left:36px">' + esc(parts[2]) + '</div>';
     }
   });
-  dirs.forEach(function(d) {
-    html += '<div class="fdir">&#128193; ' + esc(d) + '/</div>';
-    names.filter(function(n) { return n.startsWith(d + '/') && n.split('/').length === 2; })
-      .forEach(function(n) { html += '<div class="ffile">' + esc(n.split('/').pop()) + '</div>'; });
-  });
-  names.filter(function(n) { return n.indexOf('/') === -1; })
-    .forEach(function(n) { html += '<div class="ffile" style="padding-left:0">' + esc(n) + '</div>'; });
+
   document.getElementById('ftree').innerHTML = html;
 }
 
